@@ -23,7 +23,7 @@
   --tx:#eef5f0; --sub:#93c1a5; --dim:#4d7a60;
   --ac:#4ade80; --acbg:rgba(74,222,128,.1); --acgl:rgba(74,222,128,.35);
   --am:#fbbf24; --rd:#f87171; --bl:#60a5fa;
-  --rc:#c4b5fd; --rcbg:rgba(196,181,253,.13); --rcbd:rgba(196,181,253,.34);
+  --rc:#22d3ee; --rcbg:rgba(34,211,238,.13); --rcbd:rgba(34,211,238,.34);
   --sh:rgba(0,0,0,.5); --sh1:rgba(255,255,255,.018);
   --sheet:#0f2418; --r:10px; --rs:7px;
 }
@@ -34,7 +34,7 @@ body.light {
   --tx:#0a1c11; --sub:#256b49; --dim:#7ba38d;
   --ac:#1c5439; --acbg:rgba(28,84,57,.09); --acgl:rgba(28,84,57,.25);
   --am:#b76e00; --rd:#c62828; --bl:#1557b0;
-  --rc:#6d28d9; --rcbg:rgba(109,40,217,.09); --rcbd:rgba(109,40,217,.28);
+  --rc:#0e7490; --rcbg:rgba(14,116,144,.09); --rcbd:rgba(14,116,144,.28);
   --sh:rgba(0,0,0,.12); --sh1:rgba(0,0,0,0);
   --sheet:#fff;
 }
@@ -80,7 +80,7 @@ body.light .topbar { background:rgba(242,247,244,.97); }
   font-size:12px; font-weight:800; letter-spacing:.6px;
   color:var(--tx); white-space:nowrap;
 }
-@media (max-width:420px) { .brand { display:none; } }
+
 
 /* TOAST */
 .toast {
@@ -161,6 +161,23 @@ body.light .topbar { background:rgba(242,247,244,.97); }
 }
 .freqopt.sel { background:var(--rcbg); border-color:var(--rc); color:var(--rc); }
 
+.rtogglerow { display:flex; align-items:center; gap:11px; }
+.rtoggle {
+  flex-shrink:0; width:44px; height:44px; border-radius:11px;
+  background:var(--s2); border:1.5px solid var(--b1); color:var(--dim);
+  font-family:'Outfit',sans-serif; font-size:18px; font-weight:800;
+  cursor:pointer; transition:all .15s;
+}
+.rtoggle:hover { border-color:var(--b2); color:var(--sub); }
+.rtoggle.on {
+  background:var(--rcbg); border-color:var(--rc); color:var(--rc);
+  box-shadow:0 0 0 3px var(--rcbg);
+}
+.rtoggletxt { min-width:0; }
+.rtoggletitle { font-size:13px; font-weight:700; color:var(--tx); }
+.rtogglesub { font-size:11px; color:var(--sub); margin-top:2px; }
+.rtoggle.on + .rtoggletxt .rtoggletitle { color:var(--rc); }
+
 
 
 .ibt {
@@ -173,7 +190,9 @@ body.light .topbar { background:rgba(242,247,244,.97); }
 }
 .ibt:hover { border-color:var(--b2); color:var(--tx); }
 .ibt.on { border-color:var(--ac); color:var(--ac); background:var(--acbg); }
-.ibt-sq { width:42px; padding:0; }
+.ibt-sq { width:42px; padding:0; font-size:15px; letter-spacing:0; }
+#recurBtn { color:var(--rc); border-color:var(--rcbd); background:var(--rcbg); }
+#recurBtn:hover { border-color:var(--rc); color:var(--rc); }
 
 /* FILTER BAR */
 .fb { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:2px 0; }
@@ -910,6 +929,47 @@ body.light .dash-topbar { background:rgba(240,244,248,.97); }
 }
 .dash-avg-row:last-child { border-bottom:none; }
 
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE — kept last on purpose. Media queries add no
+   specificity, so these must come after the base rules they
+   override or the phone sizes are silently ignored.
+   ══════════════════════════════════════════════════════════ */
+/* ── PHONE: everything fits, nothing scrolls sideways ──
+   The action buttons are the one thing that must never be pushed off screen
+   (the settings gear used to disappear), so the brand and the stats pill give
+   up their space first and the buttons shrink to a comfortable tap size. */
+@media (max-width:560px) {
+  .topbar { padding:7px 8px 6px; }
+  .tb1 { gap:6px; }
+  .tbleft { flex:0 1 auto; min-width:0; overflow:hidden; }
+  .brand { display:none; }
+  .stats { font-size:9px; padding:3px 6px; }
+  .tbright { flex:0 0 auto; gap:4px; }
+  .ibt { height:38px; }
+  .ibt-sq { width:38px; font-size:14px; }
+  .fb { gap:5px; }
+  .chip { padding:8px 11px; font-size:12px; }
+  .chip.sm { padding:6px 9px; font-size:11px; }
+  .sep { margin:0 1px; }
+}
+/* Typical phones (375-430px) still have room for the count, so keep it. */
+@media (max-width:560px) {
+  .chip { padding:7px 9px; font-size:11px; }
+  .chip.sm { padding:6px 8px; font-size:10px; }
+}
+/* Only the genuinely narrow ones drop it rather than squeeze the buttons. */
+@media (max-width:339px) {
+  .stats { display:none; }
+  .tbright { gap:3px; }
+  .ibt-sq { width:35px; font-size:13px; }
+}
+
+/* Nothing in the app may scroll the page sideways. */
+html, body { max-width:100%; overflow-x:hidden; }
+.topbar, .tb1, .fb, .app-shell, .task-grid, .rc-body, .dash-body { max-width:100%; }
+.cname, .rc-name, .dash-task-name { overflow-wrap:anywhere; }
+
 </style>
 </head>
 <body>
@@ -923,12 +983,12 @@ body.light .dash-topbar { background:rgba(240,244,248,.97); }
       <div class="stats" id="stats">-- tasks</div>
     </div>
     <div class="tbright">
-      <button class="ibt" onclick="openDash()" id="dashBtn">&#9783; Dashboard</button>
-      <button class="ibt" onclick="openRecur()" id="recurBtn">&#8635; Recurring</button>
-      <button class="ibt" id="themeBtn" onclick="toggleTheme()">&#9788; Light</button>
-      <button class="ibt on" id="viewBtn" onclick="toggleView()">&#8803; Compact</button>
-      <button class="ibt ibt-sq" id="instBtn" onclick="openInst()" title="Install app">&#8659;</button>
-      <button class="ibt ibt-sq" onclick="openSet()">&#9881;</button>
+      <button class="ibt ibt-sq" onclick="openRecur()" id="recurBtn" title="Recurring tasks" aria-label="Recurring tasks">R</button>
+      <button class="ibt ibt-sq" onclick="openDash()" id="dashBtn" title="Dashboard" aria-label="Dashboard">D</button>
+      <button class="ibt ibt-sq on" id="viewBtn" onclick="toggleView()" title="Compact view" aria-label="Toggle compact view">C</button>
+      <button class="ibt ibt-sq" id="themeBtn" onclick="toggleTheme()" title="Theme" aria-label="Toggle theme">&#9788;</button>
+      <button class="ibt ibt-sq" id="instBtn" onclick="openInst()" title="Install app" aria-label="Install app">&#8659;</button>
+      <button class="ibt ibt-sq" onclick="openSet()" title="Settings" aria-label="Settings">&#9881;</button>
     </div>
   </div>
   <div class="fb" id="fb"></div>
@@ -1032,13 +1092,13 @@ body.light .dash-topbar { background:rgba(240,244,248,.97); }
         <div class="field"><label>Starts</label><input id="rec-start" type="date"/></div>
         <div class="field"><label>Ends (optional)</label><input id="rec-end" type="date"/></div>
       </div>
-      <div class="field ffull"><label>Link (optional)</label><input id="rec-link" type="url" placeholder="https://..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/></div>
       <div class="field ffull" id="recCW" style="display:none"><label>Category</label><div class="catgrid" id="recCG"></div></div>
       <div class="field ffull">
         <label>Subtasks On Each Occurrence</label>
         <div id="rec-st-list"></div>
         <input id="rec-st-inp" class="st-addinp" placeholder="Type subtask and press Enter..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/>
       </div>
+      <div class="field ffull"><label>Link (optional)</label><input id="rec-link" type="url" placeholder="https://..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/></div>
       <div class="sbtns ffull">
         <button class="bs" onclick="closeRecEdit()">Cancel</button>
         <button class="bp" onclick="saveRec()">Save Schedule</button>
@@ -1059,13 +1119,34 @@ body.light .dash-topbar { background:rgba(240,244,248,.97); }
         <div class="field"><label>Owner</label><select id="inp-owner" autocomplete="off"></select></div>
         <div class="field"><label>Due Date</label><input id="inp-due" type="date"/></div>
       </div>
-      <div class="field ffull"><label>Link (optional)</label><input id="inp-link" type="url" placeholder="https://..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/></div>
       <div class="field ffull" id="addCW" style="display:none"><label>Category</label><div class="catgrid" id="addCG"></div></div>
       <div class="field ffull" id="addStWrap">
         <label>Subtasks (optional)</label>
         <div id="add-st-list"></div>
         <input id="add-st-inp" class="st-addinp" placeholder="Type subtask and press Enter..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/>
       </div>
+
+      <!-- Recurring: off by default, tapping R opens the schedule fields -->
+      <div class="field ffull">
+        <div class="rtogglerow">
+          <button type="button" class="rtoggle" id="add-rtoggle" onclick="toggleAddRecur()" title="Make this repeat">R</button>
+          <div class="rtoggletxt">
+            <div class="rtoggletitle" id="add-rtoggle-title">One-off task</div>
+            <div class="rtogglesub" id="add-rtoggle-sub">Tap R to make it repeat</div>
+          </div>
+        </div>
+      </div>
+      <div id="addRecWrap" style="display:none">
+        <div class="field ffull"><label>Repeats</label><div class="freqgrid" id="add-freq"></div></div>
+        <div class="field ffull" id="add-days-wrap"><label>On These Days</label><div class="daygrid" id="add-days"></div></div>
+        <div class="field ffull" id="add-dom-wrap" style="display:none"><label>Day Of Month</label><input id="add-dom" type="number" min="1" max="31" placeholder="1-31"/></div>
+        <div class="frow">
+          <div class="field"><label>Starts</label><input id="add-start" type="date"/></div>
+          <div class="field"><label>Ends (optional)</label><input id="add-end" type="date"/></div>
+        </div>
+      </div>
+
+      <div class="field ffull"><label>Link (optional)</label><input id="inp-link" type="url" placeholder="https://..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/></div>
       <div class="sbtns ffull">
         <button class="bs" onclick="closeAdd()">Cancel</button>
         <button class="bp" onclick="addTask()">Add Task</button>
@@ -1090,13 +1171,13 @@ body.light .dash-topbar { background:rgba(240,244,248,.97); }
         <div class="field"><label>Owner</label><select id="edit-owner" autocomplete="off"></select></div>
         <div class="field"><label>Due Date</label><input id="edit-due" type="date"/></div>
       </div>
-      <div class="field ffull"><label>Link (optional)</label><input id="edit-link" type="url" placeholder="https://..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/></div>
       <div class="field ffull" id="editCW" style="display:none"><label>Category</label><div class="catgrid" id="editCG"></div></div>
       <div class="field ffull">
         <label>Subtasks</label>
         <div id="est-list"></div>
         <input id="est-inp" class="st-addinp" placeholder="Type subtask and press Enter..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/>
       </div>
+      <div class="field ffull"><label>Link (optional)</label><input id="edit-link" type="url" placeholder="https://..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/></div>
       <div class="sbtns ffull">
         <button class="bs" onclick="closeEdit()">Cancel</button>
         <button class="bp" onclick="saveEdit()">Save Changes</button>
@@ -1386,7 +1467,10 @@ function setTheme(t) {
   document.body.className = (t === 'light') ? 'light' : '';
   document.getElementById('theme-meta').content = (t === 'light') ? '#f2f7f4' : '#1c5439';
   var btn = document.getElementById('themeBtn');
-  if (btn) btn.innerHTML = (t === 'light') ? '&#9790; Dark' : '&#9788; Light';
+  if (btn) {
+    btn.innerHTML = (t === 'light') ? '&#9790;' : '&#9788;';
+    btn.title = (t === 'light') ? 'Switch to dark' : 'Switch to light';
+  }
   var btn2 = document.getElementById('themeBtn2');
   if (btn2) btn2.innerHTML = (t === 'light') ? '&#9790; Dark' : '&#9788; Light';
   render();
@@ -1401,7 +1485,10 @@ function toggleView() {
   isCompact = !isCompact;
   var btn = document.getElementById('viewBtn');
   btn.classList.toggle('on', isCompact);
-  btn.innerHTML = isCompact ? '&#8803; Compact' : '&#8801; Detailed';
+  /* Stays "C" in both states — flipping it to "D" would collide with the
+     Dashboard button. Whether compact is active is shown by the .on styling. */
+  btn.innerHTML = 'C';
+  btn.title = isCompact ? 'Compact view is on (tap for detailed)' : 'Detailed view is on (tap for compact)';
   render();
 }
 
@@ -1644,12 +1731,58 @@ function setOwner(o) { ownerF = o; render(); }
 function setDate(d)  { dateF = (dateF === d) ? '' : d; render(); }
 function setCat(c)   { catF  = (catF  === c) ? '' : c; render(); }
 
+/* ── ADD TASK: recurring toggle ── */
+var addRecOn = false, addFreq = 'weekly', addDays = [];
+
+function toggleAddRecur() {
+  addRecOn = !addRecOn;
+  if (addRecOn && !addDays.length) addDays = [new Date().getDay()];
+  syncAddRecur();
+}
+function syncAddRecur() {
+  var btn = document.getElementById('add-rtoggle');
+  btn.classList.toggle('on', addRecOn);
+  document.getElementById('addRecWrap').style.display = addRecOn ? '' : 'none';
+  document.getElementById('add-rtoggle-title').textContent = addRecOn ? 'Repeating task' : 'One-off task';
+  document.getElementById('add-rtoggle-sub').textContent   = addRecOn
+    ? 'Creates a task on every matching date'
+    : 'Tap R to make it repeat';
+  /* A repeating task takes its dates from the schedule, not a single due date. */
+  var dueWrap = document.getElementById('inp-due').closest('.field');
+  if (dueWrap) dueWrap.style.display = addRecOn ? 'none' : '';
+  if (addRecOn) { buildAddFreqGrid(); buildAddDayGrid(); }
+}
+function buildAddFreqGrid() {
+  document.getElementById('add-freq').innerHTML =
+    [{k:'daily',l:'Daily'},{k:'weekly',l:'Weekly'},{k:'monthly',l:'Monthly'}].map(function(o){
+      return '<div class="freqopt' + (addFreq===o.k?' sel':'') + '" onclick="pickAddFreq(\'' + o.k + '\')">' + o.l + '</div>';
+    }).join('');
+  document.getElementById('add-days-wrap').style.display = (addFreq === 'weekly') ? '' : 'none';
+  document.getElementById('add-dom-wrap').style.display  = (addFreq === 'monthly') ? '' : 'none';
+}
+function pickAddFreq(k) { addFreq = k; buildAddFreqGrid(); }
+function buildAddDayGrid() {
+  document.getElementById('add-days').innerHTML = DOW.map(function(d, i){
+    return '<div class="dayopt' + (addDays.indexOf(i)!==-1?' sel':'') + '" onclick="pickAddDay(' + i + ')">' + d + '</div>';
+  }).join('');
+}
+function pickAddDay(i) {
+  var at = addDays.indexOf(i);
+  if (at === -1) addDays.push(i); else addDays.splice(at, 1);
+  buildAddDayGrid();
+}
+
 /* ── ADD TASK ── */
 function openAdd() {
   addSelCat = '';
   buildCatGrid('add');
   document.getElementById('inp-due').value = new Date().toISOString().slice(0,10);
   document.getElementById('inp-link').value = '';
+  addRecOn = false; addFreq = 'weekly'; addDays = [new Date().getDay()];
+  document.getElementById('add-dom').value = '';
+  document.getElementById('add-start').value = new Date().toISOString().slice(0,10);
+  document.getElementById('add-end').value = '';
+  syncAddRecur();
   var sel = document.getElementById('inp-owner');
   sel.value = users.includes('Parking') ? 'Parking' : (users[0] || '');
   pendingSubtasks = [];
@@ -1665,6 +1798,10 @@ function closeAdd() {
 async function addTask() {
   var name = document.getElementById('inp-name').value.trim();
   if (!name) { document.getElementById('inp-name').focus(); return; }
+
+  /* Repeating: save a schedule instead of a single task, then let the
+     generator create whatever is already due. */
+  if (addRecOn) { await addRecurringTask(name); return; }
   var now = new Date();
   var ts = String(now.getMonth()+1).padStart(2,'0') + '/' +
            String(now.getDate()).padStart(2,'0') + '/' +
@@ -1690,6 +1827,35 @@ async function addTask() {
   logActivity({type:'added', taskId:res.data.id, taskName:name, detail:'by ' + owner, ts:Date.now()});
   closeAdd();
   await reloadTasks();
+}
+
+async function addRecurringTask(name) {
+  if (addFreq === 'weekly' && !addDays.length) { toast('Pick at least one day'); return; }
+  var dom = parseInt(document.getElementById('add-dom').value, 10);
+  if (addFreq === 'monthly' && (!dom || dom < 1 || dom > 31)) { toast('Pick a day of month, 1 to 31'); return; }
+  var start = document.getElementById('add-start').value || new Date().toISOString().slice(0,10);
+  var end   = document.getElementById('add-end').value || null;
+  if (end && end < start) { toast('End date is before the start date'); return; }
+
+  var res = await sb.from('irb_recurring').insert({
+    name:     name,
+    descr:    document.getElementById('inp-desc').value.trim(),
+    owner:    document.getElementById('inp-owner').value,
+    category: addSelCat || '',
+    link:     document.getElementById('inp-link').value.trim(),
+    subtasks: pendingSubtasks.map(function(x){ return {text:x.text, done:false}; }),
+    freq:     addFreq,
+    weekdays: addFreq === 'weekly' ? addDays.slice().sort(function(a,b){return a-b;}) : [],
+    day_of_month: addFreq === 'monthly' ? dom : null,
+    start_date: start,
+    end_date:   end,
+    active:   true
+  });
+  if (res.error) { console.error('[IR Board] Add schedule', res.error); toast('Could not create schedule'); return; }
+  closeAdd();
+  await reloadRecurring();
+  var made = await generateRecurring();
+  if (!made) toast('Schedule created');
 }
 
 /* ── EDIT TASK ── */

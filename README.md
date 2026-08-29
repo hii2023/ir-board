@@ -62,7 +62,9 @@ Both lists are stored in Supabase, so they are shared by everyone, not per-devic
 
 ## Recurring tasks
 
-**Recurring** button in the top bar opens the schedules page.
+The **R** button in the top bar opens the schedules page. You can also create a schedule
+without leaving the New Task sheet: tap the **R** toggle near the bottom of the form and the
+repeat options appear in place of the due date.
 
 A schedule describes work that repeats: what it is, **who it is assigned to**, a category,
 optional subtasks, and how often it repeats.
@@ -84,7 +86,7 @@ and flipping it back on resumes.
 
 Schedules do not live in a separate list. On each of its dates, a schedule creates a **real
 task on the board**, owned by the person you assigned, with its category and subtasks
-copied in. Those tasks are shown in a different colour: a **violet left edge, a violet tint,
+copied in. Those tasks are shown in a different colour: a **cyan left edge, a cyan tint,
 and a `↻ Recurring` badge**.
 
 From there they behave like any other task. Tick one off, comment on it, drag it, edit it,
@@ -102,6 +104,9 @@ a schedule with an old start date from dumping months of history onto the board.
 
 ## Using the board
 
+The top bar uses single letters so everything fits on a phone: **R** recurring,
+**D** dashboard, **C** compact/detailed, plus the settings gear.
+
 | Action | How |
 |---|---|
 | New task | `+` button, or press `N` |
@@ -110,9 +115,10 @@ a schedule with an old start date from dumping months of history onto the board.
 | Comments & history | Speech-bubble icon on the card |
 | Reorder | Drag a card (long-press first on mobile) |
 | Filter | Chips at the top, or the sidebar on desktop |
-| Stats | **Dashboard** button |
-| Repeating work | **Recurring** button |
-| Light / dark | Theme button (remembered per device) |
+| Stats | **D** button |
+| Repeating work | **R** button |
+| Theme / install | Settings (gear) |
+| Light / dark | Settings → Appearance (remembered per device) |
 
 Reordering is filter-safe: dragging inside a filtered view only reshuffles the visible
 cards within their existing slots, so hidden tasks never move.
@@ -144,3 +150,14 @@ If this needs to be locked down later, the options in increasing order of effort
 host it at an unguessed URL, put a passcode gate in front of it using the same pattern
 as `recycle_verify_passcode`, or move writes behind `SECURITY DEFINER` functions that
 take a passcode (which would cost live realtime updates).
+
+## Layout notes
+
+The board is built to fit a phone screen without sideways scrolling, and without the
+action buttons ever being pushed off the right edge (the settings gear used to disappear
+once enough people were added). On narrow screens the brand name and, on very small
+phones, the task count give up their space first.
+
+**When editing the CSS:** the responsive rules live in one block at the very end of the
+`<style>` tag, and they must stay there. Media queries add no specificity, so a phone rule
+placed before the base rule it overrides is silently ignored.
