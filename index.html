@@ -23,6 +23,7 @@
   --tx:#eef5f0; --sub:#93c1a5; --dim:#4d7a60;
   --ac:#4ade80; --acbg:rgba(74,222,128,.1); --acgl:rgba(74,222,128,.35);
   --am:#fbbf24; --rd:#f87171; --bl:#60a5fa;
+  --rc:#c4b5fd; --rcbg:rgba(196,181,253,.13); --rcbd:rgba(196,181,253,.34);
   --sh:rgba(0,0,0,.5); --sh1:rgba(255,255,255,.018);
   --sheet:#0f2418; --r:10px; --rs:7px;
 }
@@ -33,6 +34,7 @@ body.light {
   --tx:#0a1c11; --sub:#256b49; --dim:#7ba38d;
   --ac:#1c5439; --acbg:rgba(28,84,57,.09); --acgl:rgba(28,84,57,.25);
   --am:#b76e00; --rd:#c62828; --bl:#1557b0;
+  --rc:#6d28d9; --rcbg:rgba(109,40,217,.09); --rcbd:rgba(109,40,217,.28);
   --sh:rgba(0,0,0,.12); --sh1:rgba(0,0,0,0);
   --sheet:#fff;
 }
@@ -93,6 +95,71 @@ body.light .topbar { background:rgba(242,247,244,.97); }
   max-width:88vw; text-align:center;
 }
 .toast.show { opacity:1; transform:translate(-50%,0); }
+
+/* ── RECURRING ── */
+.card.recur { border-left:3px solid var(--rc); background:linear-gradient(90deg,var(--rcbg),transparent 42%); }
+.rbadge {
+  display:inline-flex; align-items:center; gap:3px;
+  background:var(--rcbg); color:var(--rc); border:1px solid var(--rcbd);
+  border-radius:20px; padding:1px 7px; font-size:10px; font-weight:700;
+  margin-left:6px; white-space:nowrap;
+}
+.donecard.recur { border-left:3px solid var(--rc); }
+
+.rc-body { max-width:900px; margin:0 auto; padding:16px 14px 90px; }
+.rc-item {
+  background:var(--s1); border:1.5px solid var(--b1); border-left:3px solid var(--rc);
+  border-radius:var(--r); padding:12px 14px; margin-bottom:10px;
+  display:flex; align-items:flex-start; gap:12px; cursor:pointer;
+  transition:border-color .15s, background .15s;
+}
+.rc-item:hover { border-color:var(--b2); }
+.rc-item.off { opacity:.5; border-left-color:var(--dim); }
+.rc-main { flex:1; min-width:0; }
+.rc-name { font-size:14px; font-weight:800; color:var(--tx); margin-bottom:5px; word-break:break-word; }
+.rc-meta { display:flex; flex-wrap:wrap; align-items:center; gap:5px; }
+.rc-sched {
+  font-family:'JetBrains Mono',monospace; font-size:10px;
+  color:var(--rc); background:var(--rcbg); border:1px solid var(--rcbd);
+  border-radius:20px; padding:2px 8px;
+}
+.rc-next { font-size:10px; color:var(--sub); font-family:'JetBrains Mono',monospace; margin-top:6px; }
+.rc-toggle {
+  flex-shrink:0; width:42px; height:24px; border-radius:20px;
+  background:var(--s3); border:1.5px solid var(--b1); position:relative;
+  cursor:pointer; transition:background .18s, border-color .18s;
+}
+.rc-toggle.on { background:var(--rcbg); border-color:var(--rc); }
+.rc-toggle::after {
+  content:''; position:absolute; top:2px; left:2px;
+  width:16px; height:16px; border-radius:50%;
+  background:var(--dim); transition:transform .18s, background .18s;
+}
+.rc-toggle.on::after { transform:translateX(18px); background:var(--rc); }
+.rc-empty { text-align:center; color:var(--dim); padding:48px 20px; font-size:13px; }
+.rc-hint {
+  color:var(--sub); font-size:11px; line-height:1.6;
+  background:var(--s1); border:1px solid var(--b1); border-radius:var(--r);
+  padding:11px 13px; margin-bottom:16px; text-transform:none;
+}
+
+.daygrid { display:flex; gap:5px; flex-wrap:wrap; }
+.dayopt {
+  flex:1; min-width:38px; text-align:center;
+  padding:9px 4px; border-radius:var(--rs);
+  background:var(--s2); border:1.5px solid var(--b1);
+  color:var(--sub); font-size:11px; font-weight:700; cursor:pointer;
+  transition:all .15s;
+}
+.dayopt.sel { background:var(--rcbg); border-color:var(--rc); color:var(--rc); }
+.freqgrid { display:flex; gap:6px; }
+.freqopt {
+  flex:1; text-align:center; padding:10px 6px; border-radius:var(--rs);
+  background:var(--s2); border:1.5px solid var(--b1);
+  color:var(--sub); font-size:12px; font-weight:700; cursor:pointer;
+  transition:all .15s;
+}
+.freqopt.sel { background:var(--rcbg); border-color:var(--rc); color:var(--rc); }
 
 
 
@@ -353,6 +420,9 @@ body.light .chip.ac { border-color:rgba(0,158,87,.4); }
   transition:background .2s;
 }
 .mov.open { display:flex; background:rgba(0,0,0,.7); }
+/* The schedule editor opens on top of the Recurring page (z-index 600),
+   so it needs to sit above it rather than behind. */
+#recM { z-index:700; }
 .sheet {
   width:100%; background:var(--sheet);
   border:1px solid var(--b2); border-bottom:none;
@@ -854,6 +924,7 @@ body.light .dash-topbar { background:rgba(240,244,248,.97); }
     </div>
     <div class="tbright">
       <button class="ibt" onclick="openDash()" id="dashBtn">&#9783; Dashboard</button>
+      <button class="ibt" onclick="openRecur()" id="recurBtn">&#8635; Recurring</button>
       <button class="ibt" id="themeBtn" onclick="toggleTheme()">&#9788; Light</button>
       <button class="ibt on" id="viewBtn" onclick="toggleView()">&#8803; Compact</button>
       <button class="ibt ibt-sq" id="instBtn" onclick="openInst()" title="Install app">&#8659;</button>
@@ -919,6 +990,59 @@ body.light .dash-topbar { background:rgba(240,244,248,.97); }
         <div class="dash-act-btns" id="dash-act-btns"></div>
       </div>
       <div id="dash-activity"></div>
+    </div>
+  </div>
+</div>
+
+<!-- RECURRING PAGE -->
+<div id="recurOverlay" style="display:none;position:fixed;inset:0;z-index:600;background:var(--bg);overflow-y:auto;">
+  <div class="dash-topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="dash-back" onclick="closeRecur()">&#8592; Back</button>
+      <span class="dash-title">Recurring Tasks</span>
+    </div>
+    <button class="ibt" onclick="openRecEdit(null)">+ New Schedule</button>
+  </div>
+  <div class="rc-body">
+    <div class="rc-hint">
+      A schedule creates a real task on the board on each of its dates, assigned to the person you pick.
+      Those tasks are marked with a &#8635; and a violet edge. Ticking one off does not affect the schedule,
+      and deleting one will not bring it back. Turn a schedule off to stop future tasks without losing history.
+    </div>
+    <div id="rc-list"></div>
+  </div>
+</div>
+
+<!-- RECURRING EDITOR -->
+<div class="mov" id="recM">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="handle"></div>
+    <div class="si">
+      <div class="shd">
+        <div><div class="sttl" id="rec-title">New Schedule</div><div class="ssub" id="rec-sub">Repeats automatically</div></div>
+        <button class="bdel" id="rec-del" onclick="deleteRec()" style="display:none">Delete</button>
+      </div>
+      <div class="field ffull"><label>Task Name</label><input class="xl" id="rec-name" placeholder="What repeats?" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/></div>
+      <div class="field ffull"><label>Description</label><textarea id="rec-desc" placeholder="Optional details..." rows="2" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"></textarea></div>
+      <div class="field ffull"><label>Assign To</label><select id="rec-owner" autocomplete="off"></select></div>
+      <div class="field ffull"><label>Repeats</label><div class="freqgrid" id="rec-freq"></div></div>
+      <div class="field ffull" id="rec-days-wrap"><label>On These Days</label><div class="daygrid" id="rec-days"></div></div>
+      <div class="field ffull" id="rec-dom-wrap" style="display:none"><label>Day Of Month</label><input id="rec-dom" type="number" min="1" max="31" placeholder="1-31"/></div>
+      <div class="frow">
+        <div class="field"><label>Starts</label><input id="rec-start" type="date"/></div>
+        <div class="field"><label>Ends (optional)</label><input id="rec-end" type="date"/></div>
+      </div>
+      <div class="field ffull"><label>Link (optional)</label><input id="rec-link" type="url" placeholder="https://..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/></div>
+      <div class="field ffull" id="recCW" style="display:none"><label>Category</label><div class="catgrid" id="recCG"></div></div>
+      <div class="field ffull">
+        <label>Subtasks On Each Occurrence</label>
+        <div id="rec-st-list"></div>
+        <input id="rec-st-inp" class="st-addinp" placeholder="Type subtask and press Enter..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/>
+      </div>
+      <div class="sbtns ffull">
+        <button class="bs" onclick="closeRecEdit()">Cancel</button>
+        <button class="bp" onclick="saveRec()">Save Schedule</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1059,6 +1183,13 @@ const SB_URL = "https://sqosmiifjqecidxhyjtg.supabase.co";
 const SB_KEY = "sb_publishable_mq6t15oAQU7f4ZAjXQZA5w_ELcgDfbt";
 const sb = supabase.createClient(SB_URL, SB_KEY);
 
+/* Escape text before it goes into innerHTML. */
+function esc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 /* ── ROW <-> APP SHAPE ──
    DB columns are snake_case; the UI code below speaks the original camelCase
    shape, so everything is mapped at the boundary and nowhere else. */
@@ -1069,7 +1200,8 @@ function fromRow(r) {
     done: !!r.done, order: Number(r.sort_order || 0),
     createdAt: Number(r.created_at || 0),
     completedAt: (r.completed_at === null || r.completed_at === undefined) ? null : Number(r.completed_at),
-    subtasks: r.subtasks || [], logs: r.logs || []
+    subtasks: r.subtasks || [], logs: r.logs || [],
+    recurringId: r.recurring_id || null
   };
 }
 var COLMAP = { desc:'descr', dueDate:'due_date', order:'sort_order',
@@ -1326,8 +1458,9 @@ async function initConfig() {
 }
 
 function syncSelects() {
-  ['inp-owner','edit-owner'].forEach(function(id) {
+  ['inp-owner','edit-owner','rec-owner'].forEach(function(id) {
     var sel = document.getElementById(id);
+    if (!sel) return;
     var cur = sel.value;
     sel.innerHTML = users.map(function(u) {
       return '<option' + (u === cur ? ' selected' : '') + '>' + u + '</option>';
@@ -1832,7 +1965,7 @@ async function endDrag() {
 /* ── CREATE CARD ── */
 function createCard(t, rank) {
   var card = document.createElement('div');
-  card.className = 'card' + (t.done ? ' done' : '');
+  card.className = 'card' + (t.done ? ' done' : '') + (t.recurringId ? ' recur' : '');
   card.dataset.id = t.id;
   var due = fmtDue(t.dueDate);
   var os  = ownerStyle(t.owner || '');
@@ -1852,7 +1985,8 @@ function createCard(t, rank) {
   crow.className = 'crow';
   var dueLineHTML = due ? '<div class="cdue ' + due.cls + '" style="margin-top:3px">&#128197; ' + due.label + '</div>' : '';
   var catLineHTML = cc ? '<div class="ccat"><span class="ccatpill" style="background:' + cc + '18;color:' + cc + ';border:1px solid ' + cc + '30">' + t.category + '</span></div>' : '';
-  var ownerLineHTML = '<span class="ccatpill" style="background:' + os.bg + ';color:' + os.c + ';margin-left:' + (cc ? '6' : '0') + 'px">' + t.owner + '</span>';
+  var ownerLineHTML = '<span class="ccatpill" style="background:' + os.bg + ';color:' + os.c + ';margin-left:' + (cc ? '6' : '0') + 'px">' + t.owner + '</span>' +
+    (t.recurringId ? '<span class="rbadge" title="Created by a recurring schedule">&#8635; Recurring</span>' : '');
   crow.innerHTML =
     '<div class="cradio' + (t.done ? ' done' : '') + '"></div>' +
     '<div class="cbody">' +
@@ -1980,7 +2114,7 @@ function createCard(t, rank) {
 /* ── CREATE DONE CARD ── */
 function createDoneCard(t) {
   var card = document.createElement('div');
-  card.className = 'donecard';
+  card.className = 'donecard' + (t.recurringId ? ' recur' : '');
   card.dataset.id = t.id;
   var os = ownerStyle(t.owner || '');
   card.innerHTML =
@@ -2251,6 +2385,24 @@ document.addEventListener('DOMContentLoaded', function(){
     });
     asi.addEventListener('click', function(e){ e.stopPropagation(); });
   }
+  var rsi = document.getElementById('rec-st-inp');
+  if (rsi) {
+    rsi.addEventListener('keydown', function(e){
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        var txt = rsi.value.trim();
+        if (!txt) return;
+        recSubs.push({text:txt, done:false});
+        rsi.value = '';
+        renderRecStList();
+      }
+      e.stopPropagation();
+    });
+    rsi.addEventListener('click', function(e){ e.stopPropagation(); });
+  }
+  var rn = document.getElementById('rec-name');
+  if (rn) rn.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); saveRec(); } });
+
   var ei = document.getElementById('est-inp');
   if (!ei) return;
   ei.addEventListener('keydown', function(e){
@@ -2277,6 +2429,259 @@ function stRefresh() {
   renderEstList();
 }
 
+
+/* ════════════════════════════════
+   RECURRING SCHEDULES
+════════════════════════════════ */
+var recurring = [];
+var recEditId = null, recSelCat = '', recFreq = 'weekly', recDays = [], recSubs = [];
+var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function fromRecRow(r) {
+  return {
+    id:r.id, name:r.name, desc:r.descr || '', owner:r.owner || '',
+    category:r.category || '', link:r.link || '', subtasks:r.subtasks || [],
+    freq:r.freq || 'weekly', weekdays:r.weekdays || [],
+    dayOfMonth:r.day_of_month, startDate:r.start_date, endDate:r.end_date,
+    active:!!r.active, createdAt:Number(r.created_at || 0)
+  };
+}
+
+async function reloadRecurring() {
+  var res = await sb.from('irb_recurring').select('*').order('created_at', {ascending:true});
+  if (res.error) { console.error('[IR Board] Load schedules', res.error); return; }
+  recurring = (res.data || []).map(fromRecRow);
+  renderRecList();
+}
+
+/* Materialise any occurrences that are due. Idempotent server-side, so it is
+   safe to call on every load and from every open board. */
+async function generateRecurring() {
+  var res = await sb.rpc('irb_generate_recurring', {p_lookback_days: 14});
+  if (res.error) { console.error('[IR Board] Generate recurring', res.error); return 0; }
+  var made = res.data || 0;
+  if (made > 0) { await reloadTasks(); toast(made + ' recurring task' + (made===1?'':'s') + ' added'); }
+  return made;
+}
+
+/* ── Human-readable schedule ── */
+function schedLabel(r) {
+  if (r.freq === 'daily') return 'Every day';
+  if (r.freq === 'monthly') {
+    var d = r.dayOfMonth || 1;
+    var suf = (d===1||d===21||d===31)?'st':(d===2||d===22)?'nd':(d===3||d===23)?'rd':'th';
+    return 'Monthly on the ' + d + suf;
+  }
+  var ds = (r.weekdays || []).slice().sort(function(a,b){return a-b;});
+  if (!ds.length) return 'Weekly (no days picked)';
+  if (ds.length === 7) return 'Every day';
+  if (ds.length === 5 && ds.join() === '1,2,3,4,5') return 'Every weekday';
+  return 'Every ' + ds.map(function(d){ return DOW[d]; }).join(', ');
+}
+
+/* Next date this schedule fires, scanning forward up to ~14 months. */
+function nextOccurrence(r) {
+  if (!r.active) return null;
+  var d = new Date(); d.setHours(0,0,0,0);
+  var start = r.startDate ? new Date(r.startDate + 'T00:00:00') : d;
+  if (start > d) d = start;
+  var end = r.endDate ? new Date(r.endDate + 'T00:00:00') : null;
+  for (var i = 0; i < 430; i++) {
+    if (end && d > end) return null;
+    var hit = false;
+    if (r.freq === 'daily') hit = true;
+    else if (r.freq === 'weekly') hit = (r.weekdays || []).indexOf(d.getDay()) !== -1;
+    else if (r.freq === 'monthly') {
+      var last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+      hit = d.getDate() === Math.min(r.dayOfMonth || 1, last);
+    }
+    if (hit) return new Date(d);
+    d.setDate(d.getDate() + 1);
+  }
+  return null;
+}
+
+/* ── Page ── */
+function openRecur() {
+  document.getElementById('recurOverlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  renderRecList();
+}
+function closeRecur() {
+  document.getElementById('recurOverlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function renderRecList() {
+  var el = document.getElementById('rc-list');
+  if (!el) return;
+  if (!recurring.length) {
+    el.innerHTML = '<div class="rc-empty">No schedules yet.<br/>Use <b>+ New Schedule</b> to set one up.</div>';
+    return;
+  }
+  var M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  el.innerHTML = recurring.map(function(r) {
+    var os = ownerStyle(r.owner || '');
+    var cc = r.category ? catColor(r.category) : null;
+    var nx = nextOccurrence(r);
+    var nxTxt = !r.active ? 'Paused' :
+                nx ? ('Next: ' + nx.getDate() + ' ' + M[nx.getMonth()] +
+                      (nx.getFullYear() !== new Date().getFullYear() ? ' ' + nx.getFullYear() : ''))
+                   : 'No future dates';
+    var stTxt = (r.subtasks || []).length ? ' &middot; ' + r.subtasks.length + ' subtask' + (r.subtasks.length===1?'':'s') : '';
+    return '<div class="rc-item' + (r.active ? '' : ' off') + '" onclick="openRecEdit(\'' + r.id + '\')">' +
+      '<div class="rc-main">' +
+        '<div class="rc-name">' + esc(r.name) + '</div>' +
+        '<div class="rc-meta">' +
+          '<span class="rc-sched">' + schedLabel(r) + '</span>' +
+          (cc ? '<span class="ccatpill" style="background:' + cc + '18;color:' + cc + ';border:1px solid ' + cc + '30">' + esc(r.category) + '</span>' : '') +
+          '<span class="ccatpill" style="background:' + os.bg + ';color:' + os.c + '">' + esc(r.owner || 'Unassigned') + '</span>' +
+        '</div>' +
+        '<div class="rc-next">' + nxTxt + stTxt + '</div>' +
+      '</div>' +
+      '<div class="rc-toggle' + (r.active ? ' on' : '') + '" title="' + (r.active ? 'Pause' : 'Resume') + '" onclick="event.stopPropagation();toggleRec(\'' + r.id + '\',' + r.active + ')"></div>' +
+    '</div>';
+  }).join('');
+}
+
+/* ── Editor ── */
+function buildFreqGrid() {
+  document.getElementById('rec-freq').innerHTML =
+    [{k:'daily',l:'Daily'},{k:'weekly',l:'Weekly'},{k:'monthly',l:'Monthly'}].map(function(o){
+      return '<div class="freqopt' + (recFreq===o.k?' sel':'') + '" onclick="pickFreq(\'' + o.k + '\')">' + o.l + '</div>';
+    }).join('');
+  document.getElementById('rec-days-wrap').style.display = (recFreq === 'weekly') ? '' : 'none';
+  document.getElementById('rec-dom-wrap').style.display  = (recFreq === 'monthly') ? '' : 'none';
+}
+function pickFreq(k) { recFreq = k; buildFreqGrid(); }
+function buildDayGrid() {
+  document.getElementById('rec-days').innerHTML = DOW.map(function(d, i){
+    return '<div class="dayopt' + (recDays.indexOf(i)!==-1?' sel':'') + '" onclick="pickDay(' + i + ')">' + d + '</div>';
+  }).join('');
+}
+function pickDay(i) {
+  var at = recDays.indexOf(i);
+  if (at === -1) recDays.push(i); else recDays.splice(at, 1);
+  buildDayGrid();
+}
+function buildRecCatGrid() {
+  var g = document.getElementById('recCG');
+  if (!g) return;
+  g.innerHTML = categories.map(function(c) {
+    var cc = catColor(c), sel = (recSelCat === c);
+    return '<div class="catopt' + (sel?' sel':'') + '" onclick="pickRecCat(\'' + c + '\')" style="' +
+      (sel ? ('border-color:' + cc + ';color:' + cc + ';background:' + cc + '18') : '') + '">' + c + '</div>';
+  }).join('');
+  document.getElementById('recCW').style.display = categories.length ? '' : 'none';
+}
+function pickRecCat(c) { recSelCat = (recSelCat === c) ? '' : c; buildRecCatGrid(); }
+
+function renderRecStList() {
+  var list = document.getElementById('rec-st-list');
+  if (!list) return;
+  list.innerHTML = '';
+  recSubs.forEach(function(sub, i) {
+    var row = document.createElement('div'); row.className = 'st-item';
+    var cb  = document.createElement('div'); cb.className = 'st-cb';
+    var lbl = document.createElement('div'); lbl.className = 'st-label'; lbl.textContent = sub.text;
+    var del = document.createElement('button'); del.className = 'st-del'; del.textContent = '\u00d7'; del.type = 'button';
+    del.addEventListener('click', function(){ recSubs.splice(i,1); renderRecStList(); });
+    row.appendChild(cb); row.appendChild(lbl); row.appendChild(del);
+    list.appendChild(row);
+  });
+}
+
+function openRecEdit(id) {
+  recEditId = id;
+  var r = id ? recurring.find(function(x){ return x.id === id; }) : null;
+  document.getElementById('rec-title').textContent = r ? 'Edit Schedule' : 'New Schedule';
+  document.getElementById('rec-sub').textContent   = r ? schedLabel(r) : 'Repeats automatically';
+  document.getElementById('rec-del').style.display = r ? '' : 'none';
+
+  document.getElementById('rec-name').value  = r ? r.name : '';
+  document.getElementById('rec-desc').value  = r ? r.desc : '';
+  document.getElementById('rec-link').value  = r ? r.link : '';
+  document.getElementById('rec-start').value = r ? (r.startDate || '') : new Date().toISOString().slice(0,10);
+  document.getElementById('rec-end').value   = (r && r.endDate) ? r.endDate : '';
+  document.getElementById('rec-dom').value   = (r && r.dayOfMonth) ? r.dayOfMonth : '';
+
+  var sel = document.getElementById('rec-owner');
+  sel.innerHTML = users.map(function(u){
+    return '<option' + ((r && r.owner === u) ? ' selected' : '') + '>' + u + '</option>';
+  }).join('');
+  if (!r) sel.value = users.indexOf('Parking') !== -1 ? 'Parking' : (users[0] || '');
+
+  recFreq   = r ? r.freq : 'weekly';
+  recDays   = r ? (r.weekdays || []).slice() : [new Date().getDay()];
+  recSelCat = r ? r.category : '';
+  recSubs   = r ? (r.subtasks || []).map(function(x){ return {text:x.text, done:false}; }) : [];
+
+  buildFreqGrid(); buildDayGrid(); buildRecCatGrid(); renderRecStList();
+  document.getElementById('recM').classList.add('open');
+  setTimeout(function(){ document.getElementById('rec-name').focus(); }, 260);
+}
+function closeRecEdit() {
+  document.getElementById('recM').classList.remove('open');
+  recEditId = null;
+}
+
+async function saveRec() {
+  var name = document.getElementById('rec-name').value.trim();
+  if (!name) { toast('Give the schedule a name'); document.getElementById('rec-name').focus(); return; }
+  if (recFreq === 'weekly' && !recDays.length) { toast('Pick at least one day'); return; }
+
+  var dom = parseInt(document.getElementById('rec-dom').value, 10);
+  if (recFreq === 'monthly' && (!dom || dom < 1 || dom > 31)) { toast('Pick a day of month, 1 to 31'); return; }
+
+  var start = document.getElementById('rec-start').value || new Date().toISOString().slice(0,10);
+  var end   = document.getElementById('rec-end').value || null;
+  if (end && end < start) { toast('End date is before the start date'); return; }
+
+  var row = {
+    name:name,
+    descr:    document.getElementById('rec-desc').value.trim(),
+    owner:    document.getElementById('rec-owner').value || '',
+    category: recSelCat || '',
+    link:     document.getElementById('rec-link').value.trim(),
+    subtasks: recSubs.map(function(x){ return {text:x.text, done:false}; }),
+    freq:     recFreq,
+    weekdays: recFreq === 'weekly' ? recDays.slice().sort(function(a,b){return a-b;}) : [],
+    day_of_month: recFreq === 'monthly' ? dom : null,
+    start_date: start,
+    end_date:   end
+  };
+
+  var res = recEditId
+    ? await sb.from('irb_recurring').update(row).eq('id', recEditId)
+    : await sb.from('irb_recurring').insert(Object.assign({active:true}, row));
+  if (res.error) { console.error('[IR Board] Save schedule', res.error); toast('Could not save schedule'); return; }
+
+  closeRecEdit();
+  await reloadRecurring();
+  await generateRecurring();
+  toast(recEditId ? 'Schedule updated' : 'Schedule created');
+}
+
+async function toggleRec(id, cur) {
+  var res = await sb.from('irb_recurring').update({active: !cur}).eq('id', id);
+  if (res.error) { toast('Could not update schedule'); return; }
+  await reloadRecurring();
+  if (cur) toast('Schedule paused'); else { await generateRecurring(); toast('Schedule resumed'); }
+}
+
+async function deleteRec() {
+  if (!recEditId) return;
+  var r = recurring.find(function(x){ return x.id === recEditId; });
+  var made = tasks.filter(function(t){ return t.recurringId === recEditId; }).length;
+  if (!confirm('Delete this schedule?\n\nNo more tasks will be created from it.' +
+      (made ? ' The ' + made + ' task' + (made===1?'':'s') + ' already on the board stay, and lose the recurring marker.' : ''))) return;
+  var res = await sb.from('irb_recurring').delete().eq('id', recEditId);
+  if (res.error) { toast('Could not delete schedule'); return; }
+  closeRecEdit();
+  await reloadRecurring();
+  await reloadTasks();
+  toast('Schedule deleted');
+}
 
 /* ════════════════════════════════
    DASHBOARD
@@ -2606,7 +3011,8 @@ function onRemoteChange(what) {
   rtDebounce[what] = setTimeout(function() {
     if (what === 'tasks')    reloadTasks();
     if (what === 'activity') reloadActivity();
-    if (what === 'config')   reloadConfig();
+    if (what === 'config')    reloadConfig();
+    if (what === 'recurring') reloadRecurring();
   }, 180);
 }
 
@@ -2614,6 +3020,7 @@ sb.channel('irb-board')
   .on('postgres_changes', {event:'*', schema:'public', table:'irb_tasks'},    function(){ onRemoteChange('tasks'); })
   .on('postgres_changes', {event:'*', schema:'public', table:'irb_activity'}, function(){ onRemoteChange('activity'); })
   .on('postgres_changes', {event:'*', schema:'public', table:'irb_config'},   function(){ onRemoteChange('config'); })
+  .on('postgres_changes', {event:'*', schema:'public', table:'irb_recurring'},function(){ onRemoteChange('recurring'); })
   .subscribe(function(status) {
     var dot = document.querySelector('.dot');
     if (!dot) return;
@@ -2633,7 +3040,9 @@ var lastResync = Date.now();
 function resync(force) {
   if (!force && Date.now() - lastResync < RESYNC_MIN_MS) return;
   lastResync = Date.now();
-  reloadTasks(); reloadActivity(); reloadConfig();
+  reloadTasks(); reloadActivity(); reloadConfig(); reloadRecurring();
+  /* A board left open overnight should pick up the new day's tasks. */
+  generateRecurring();
 }
 document.addEventListener('visibilitychange', function() {
   if (!document.hidden) resync(false);
@@ -2645,6 +3054,8 @@ window.addEventListener('online', function(){ resync(true); });
   lastResync = Date.now();
   await initConfig();
   await reloadConfig();
+  await reloadRecurring();
+  await generateRecurring();
   await reloadTasks();
   reloadActivity();
 })();
@@ -2654,7 +3065,7 @@ document.addEventListener('keydown', function(e) {
   var a = document.activeElement;
   var typing = a.isContentEditable || ['INPUT','SELECT','TEXTAREA'].includes(a.tagName);
   if (e.key === 'Escape') {
-    ['addM','editM','logM','setM','instM'].forEach(function(id) {
+    ['addM','editM','logM','setM','instM','recM'].forEach(function(id) {
       document.getElementById(id).classList.remove('open');
     });
   }
@@ -2665,7 +3076,7 @@ document.getElementById('inp-name').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') { e.preventDefault(); addTask(); }
 });
 
-['addM','editM','logM','setM','instM'].forEach(function(id) {
+['addM','editM','logM','setM','instM','recM'].forEach(function(id) {
   document.getElementById(id).addEventListener('click', function() {
     document.getElementById(id).classList.remove('open');
   });

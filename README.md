@@ -30,12 +30,20 @@ The page uses the modern **publishable** key (`sb_publishable_...`), not the leg
 - **`irb_config`** — two rows, `users` and `categories`, each holding `{ "list": [...] }`.
   This is what the Settings panel edits.
 
-### Function
+- **`irb_recurring`** — one row per repeating schedule (what repeats, who it's assigned
+  to, how often).
+- **`irb_recurring_runs`** — ledger of occurrences already created. Kept separate from
+  `irb_tasks` on purpose: deleting a generated task does **not** cause it to reappear.
+
+### Functions
 
 - **`irb_append_log(p_id, p_entry, p_done, p_completed_at)`** — appends one entry to a
   task's `logs` array server-side. Comments and done/reopen stamps go through this so
   two people acting on the same task at the same time cannot overwrite each other's
   entries. (Verified: five concurrent appends all survive.)
+- **`irb_generate_recurring(p_lookback_days)`** — turns due schedule occurrences into
+  real tasks. Idempotent via the `irb_recurring_runs` primary key, so every board can
+  safely call it on load without creating duplicates.
 
 Realtime is enabled on all three tables, so a change on one device shows up on every
 other open board within a second, with no refresh.
@@ -52,6 +60,46 @@ Gear icon (top right) → **Settings**:
 Both lists are stored in Supabase, so they are shared by everyone, not per-device.
 `Parking` is the default bucket for unassigned work.
 
+## Recurring tasks
+
+**Recurring** button in the top bar opens the schedules page.
+
+A schedule describes work that repeats: what it is, **who it is assigned to**, a category,
+optional subtasks, and how often it repeats.
+
+| Repeats | You set |
+|---|---|
+| Daily | nothing else |
+| Weekly | which weekdays (any combination) |
+| Monthly | a day of the month, 1 to 31 |
+
+A "31st" monthly schedule falls back to the last day in shorter months, so it fires in
+February and never skips a month.
+
+Each schedule also takes a start date and an optional end date. The toggle on the right
+pauses a schedule: no new tasks are created, nothing already on the board is affected,
+and flipping it back on resumes.
+
+### How the tasks appear
+
+Schedules do not live in a separate list. On each of its dates, a schedule creates a **real
+task on the board**, owned by the person you assigned, with its category and subtasks
+copied in. Those tasks are shown in a different colour: a **violet left edge, a violet tint,
+and a `↻ Recurring` badge**.
+
+From there they behave like any other task. Tick one off, comment on it, drag it, edit it,
+delete it. None of that changes the schedule, and a deleted occurrence will not come back.
+
+### When they get created
+
+Whenever someone opens the board, and again if a board is left open across midnight.
+There is no server cron: generation runs from the page, and the `irb_recurring_runs`
+ledger makes it safe for several people to open the board at the same time.
+
+Missed days are backfilled up to **14 days** and land as overdue, so work that was skipped
+while nobody had the board open still shows up. Older gaps are not backfilled, which keeps
+a schedule with an old start date from dumping months of history onto the board.
+
 ## Using the board
 
 | Action | How |
@@ -63,6 +111,7 @@ Both lists are stored in Supabase, so they are shared by everyone, not per-devic
 | Reorder | Drag a card (long-press first on mobile) |
 | Filter | Chips at the top, or the sidebar on desktop |
 | Stats | **Dashboard** button |
+| Repeating work | **Recurring** button |
 | Light / dark | Theme button (remembered per device) |
 
 Reordering is filter-safe: dragging inside a filtered view only reshuffles the visible
