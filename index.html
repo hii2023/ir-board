@@ -786,20 +786,31 @@ body.light .field input[type="date"] { color-scheme:light; }
     height:100%;
   }
 
-  /* TWO COLUMN TASK GRID */
+  /* TWO COLUMN TASK LIST — reads DOWN the left column and continues DOWN the
+     right, so the rank numbers run 1..n then n+1..end. A grid fills row-major
+     (1,2 / 3,4) which makes the sequence zig-zag; multi-column fills the first
+     column before the second and balances the two heights on its own. */
   .task-grid {
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:5px 8px;
-    align-items:start;
+    display:block;
+    columns:2;
+    column-gap:8px;
+    orphans:1; widows:1;
   }
-  /* Done separator spans full width */
-  .donesep { grid-column:1/-1; }
-  /* Done cards in 2-col too */
+  .task-grid > * {
+    break-inside:avoid;
+    -webkit-column-break-inside:avoid;
+    page-break-inside:avoid;
+  }
+  /* Full-width rows end the columns and start a fresh pair below. */
+  .donesep, .compliment, .empty {
+    column-span:all;
+    -webkit-column-span:all;
+  }
 
   .container { max-width:none; padding:0; }
-  .card { margin-bottom:0; }
-  .donesep { grid-column:1/-1; margin:10px 0 5px; }
+  .card { margin-bottom:5px; }
+  .donecard { margin-bottom:4px; }
+  .donesep { margin:10px 0 5px; }
 
   /* Topbar stat pill */
   .stats { font-size:12px; }
