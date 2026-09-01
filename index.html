@@ -808,7 +808,17 @@ body.light .field input[type="date"] { color-scheme:light; }
   }
 
   .container { max-width:none; padding:0; }
-  .card { margin-bottom:5px; }
+  .card {
+    margin-bottom:5px;
+    /* The rank watermark is position:absolute against the card. Inside a
+       multi-column container Chrome mis-resolves that for the LAST card in a
+       column: the number gets stretched to the column height and pushed above
+       the card, so it disappears. Giving the card its own block formatting
+       context pins it back. contain, transform, will-change and isolation all
+       fail to fix it; overflow is what works. It also trims the few px the
+       number used to bleed past the card edge, which is no loss at 9% opacity. */
+    overflow:hidden;
+  }
   .donecard { margin-bottom:4px; }
   .donesep { margin:10px 0 5px; }
 
