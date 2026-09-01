@@ -164,9 +164,9 @@ body.light .topbar { background:rgba(242,247,244,.97); }
 /* ── FILTER SHEET ── */
 .filtgrid { display:flex; flex-wrap:wrap; gap:7px; }
 .filtopt {
-  padding:11px 14px; border-radius:var(--rs);
+  padding:12px 15px; border-radius:var(--rs);
   background:var(--s2); border:1.5px solid var(--b1);
-  color:var(--sub); font-size:13px; font-weight:700; cursor:pointer;
+  color:var(--sub); font-size:14px; font-weight:700; cursor:pointer;
   transition:all .15s; user-select:none;
 }
 .filtopt.sel { background:var(--acbg); border-color:var(--ac); color:var(--ac); }
@@ -975,8 +975,8 @@ body.light .dash-topbar { background:rgba(240,244,248,.97); }
   .ibt { height:38px; }
   .ibt-sq { width:38px; font-size:14px; }
   .fb { gap:5px; }
-  .chip { padding:8px 11px; font-size:12px; }
-  .chip.sm { padding:6px 9px; font-size:11px; }
+  .chip { padding:10px 14px; font-size:15px; }
+  .chip.sm { padding:8px 11px; font-size:13px; }
   .sep { margin:0 1px; }
 
   /* Bigger names and roomier rows for thumbs */
@@ -988,16 +988,21 @@ body.light .dash-topbar { background:rgba(240,244,248,.97); }
   .donename { font-size:16px; }
   .clog { width:42px; height:42px; }
 }
-/* Typical phones (375-430px) still have room for the count, so keep it. */
+/* Typical phones (375-430px) still have room for the count, so keep it.
+   Filter names are deliberately near body size — they are the main way people
+   move around the board on a phone, so they need to be readable and tappable. */
 @media (max-width:560px) {
-  .chip { padding:7px 9px; font-size:11px; }
-  .chip.sm { padding:6px 8px; font-size:10px; }
+  .chip { padding:10px 14px; font-size:15px; }
+  .chip.sm { padding:8px 11px; font-size:13px; }
+  .filtopt { padding:13px 16px; font-size:15px; }
+  .setttl { font-size:12px; }
 }
 /* Only the genuinely narrow ones drop it rather than squeeze the buttons. */
 @media (max-width:339px) {
   .stats { display:none; }
   .tbright { gap:3px; }
   .ibt-sq { width:35px; font-size:13px; }
+  .chip { padding:9px 12px; font-size:14px; }
 }
 
 /* Nothing in the app may scroll the page sideways. */
