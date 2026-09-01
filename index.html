@@ -183,6 +183,58 @@ body.light .topbar { background:rgba(242,247,244,.97); }
   background:var(--ac); border:2px solid var(--bg);
 }
 
+/* ── TASK COMPLETION ── */
+@keyframes cardDone {
+  0%   { transform:scale(1);     opacity:1; }
+  30%  { transform:scale(1.018); opacity:1; box-shadow:0 0 0 3px var(--acgl); }
+  100% { transform:scale(.965);  opacity:.15; }
+}
+.card.completing { animation:cardDone .42s cubic-bezier(.4,0,.2,1) forwards; pointer-events:none; }
+
+@keyframes ringPop {
+  0%   { transform:scale(.6); opacity:.85; }
+  100% { transform:scale(2.3); opacity:0; }
+}
+.cradio { position:relative; }
+.cradio.burst { border-color:var(--ac); background:var(--acbg); }
+.cradio.burst::before {
+  content:''; position:absolute; inset:-2px;
+  border-radius:50%; border:2px solid var(--ac);
+  animation:ringPop .45s cubic-bezier(.2,.7,.3,1) forwards;
+}
+@keyframes tickIn {
+  0%   { transform:scale(0) rotate(-25deg); opacity:0; }
+  60%  { transform:scale(1.25) rotate(0);   opacity:1; }
+  100% { transform:scale(1) rotate(0);      opacity:1; }
+}
+.cradio.burst::after {
+  content:'\2713'; color:var(--ac);
+  font-size:17px; font-weight:900; line-height:1;
+  animation:tickIn .34s cubic-bezier(.3,1.4,.5,1) forwards;
+}
+
+/* ── COMPLIMENT ── */
+@keyframes compIn {
+  0%   { transform:translateY(10px) scale(.97); opacity:0; }
+  100% { transform:none; opacity:1; }
+}
+.compliment {
+  grid-column:1 / -1;
+  text-align:center; padding:34px 22px;
+  background:var(--s1); border:1.5px solid var(--b1);
+  border-radius:var(--r); margin-bottom:10px;
+  animation:compIn .38s cubic-bezier(.3,1.2,.5,1) both;
+}
+.comp-mark { font-size:34px; line-height:1; margin-bottom:12px; }
+.comp-text {
+  font-size:16px; font-weight:700; color:var(--ac);
+  line-height:1.45; max-width:34ch; margin:0 auto;
+}
+.comp-sub {
+  margin-top:9px; font-size:11px; color:var(--dim);
+  font-family:'JetBrains Mono',monospace;
+}
+
 .rtogglerow { display:flex; align-items:center; gap:11px; }
 .rtoggle {
   flex-shrink:0; width:44px; height:44px; border-radius:11px;
@@ -984,6 +1036,15 @@ body.light .dash-topbar { background:rgba(240,244,248,.97); }
   /* Task cards run ~30% smaller than the filter chrome above them: the cards
      are read, the chips are tapped. The tick circle and log button shrink less
      than the text so they stay comfortable targets. */
+  /* Recurring needs to read as a different KIND of task at a glance on a
+     phone, so it gets a full tint and a thicker edge, not a faint gradient. */
+  .card.recur {
+    border-left-width:5px;
+    border-color:var(--rcbd); border-left-color:var(--rc);
+    background:var(--rcbg);
+  }
+  .rbadge { font-size:10px; padding:2px 8px; }
+
   .cname { font-size:16px; line-height:1.3; }
   .crow { padding:10px 10px 5px 9px; grid-template-columns:34px 1fr auto; gap:0 9px; }
   .cradio { width:30px; height:30px; border-width:2px; }
@@ -1283,6 +1344,7 @@ html, body { max-width:100%; overflow-x:hidden; }
         <div class="setttl">Appearance</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="ibt" id="themeBtn2" onclick="toggleTheme()" style="flex:1;min-width:120px">&#9788; Light</button>
+          <button class="ibt" id="soundBtn" onclick="toggleSound()" style="flex:1;min-width:120px">&#9834; Sound On</button>
           <button class="ibt" onclick="openInst();closeSet();" style="flex:1;min-width:120px">&#8659; Install App</button>
         </div>
       </div>
@@ -1432,6 +1494,109 @@ async function logActivity(a) {
     detail: a.detail || '', ts: a.ts || Date.now()
   });
   reloadActivity();
+}
+
+/* ── COMPLETION SOUND ──
+   Generated with WebAudio rather than shipped as a file: it keeps the page
+   self-contained and lets the chime stay soft. Built lazily on the first tick,
+   which is always a real tap, so autoplay policy is satisfied. */
+var soundOn = localStorage.getItem('irb_sound') !== 'off';
+var audioCtx = null;
+
+function setSound(on) {
+  soundOn = on;
+  localStorage.setItem('irb_sound', on ? 'on' : 'off');
+  var b = document.getElementById('soundBtn');
+  if (b) b.innerHTML = on ? '&#9834; Sound On' : '&#9834; Sound Off';
+}
+function toggleSound() { setSound(!soundOn); if (soundOn) playDoneSound(); }
+
+function playDoneSound() {
+  if (!soundOn) return;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!audioCtx) audioCtx = new AC();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    var t0 = audioCtx.currentTime;
+    var master = audioCtx.createGain();
+    master.gain.value = 0.19;
+    master.connect(audioCtx.destination);
+
+    /* A major triad, each note a little softer and later than the last:
+       reads as a resolved, calm "done" rather than an alert. */
+    [[523.25, 0], [659.25, 0.085], [783.99, 0.17]].forEach(function(pair, i) {
+      var freq = pair[0], delay = pair[1];
+      var osc = audioCtx.createOscillator();
+      var g   = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      var start = t0 + delay;
+      var peak  = 0.5 / (i + 1.5);
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(peak, start + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + 0.55);
+      osc.connect(g); g.connect(master);
+      osc.start(start);
+      osc.stop(start + 0.6);
+    });
+  } catch (e) { /* sound is a nicety, never break the tick */ }
+}
+
+function haptic(ms) {
+  try { if (navigator.vibrate) navigator.vibrate(ms || 18); } catch (e) {}
+}
+
+/* ── COMPLIMENTS ──
+   Shown when the person you are filtered to has nothing active left. */
+var COMPLIMENTS = [
+  '{n}, your board is completely clear. Beautifully done.',
+  'Nothing left for {n}. That is a proper clean sweep.',
+  'All caught up, {n}. The rest of us are taking notes.',
+  '{n} has zero pending tasks. Quietly impressive.',
+  'Empty list, {n}. You have earned the chai.',
+  '{n}, everything assigned to you is finished. Outstanding.',
+  'Not a single task left for {n}. Take a bow.',
+  '{n} cleared the lot. That is how it is done.',
+  'All done, {n}. Your future self says thank you.',
+  '{n}, your list is spotless. Genuinely excellent work.',
+  'Nothing pending for {n}. Consistency like that adds up.',
+  '{n}, you finished every last one. Brilliant.',
+  'Clean slate for {n}. Enjoy the quiet.',
+  '{n} is all clear. The board looks better for it.',
+  'Zero tasks, {n}. You made that look easy.',
+  '{n} has nothing left to do. Well and truly sorted.',
+  'Every task done, {n}. That is real momentum.',
+  '{n}, your corner of the board is immaculate.',
+  'All wrapped up, {n}. Reliable as ever.',
+  'Nothing outstanding for {n}. Superb effort.'
+];
+var COMP_MARKS = ['✨', '⭐', '🎉', '👏', '🌱'];
+var compCache = { owner: null, text: '', mark: '' };
+var lastCompIdx = -1;
+
+function pickCompliment(name) {
+  var i = Math.floor(Math.random() * COMPLIMENTS.length);
+  if (COMPLIMENTS.length > 1 && i === lastCompIdx) i = (i + 1) % COMPLIMENTS.length;
+  lastCompIdx = i;
+  return COMPLIMENTS[i].replace(/\{n\}/g, name);
+}
+
+function complimentEl(owner, doneCount) {
+  /* Keep the same wording while the state holds, pick a fresh one next time. */
+  if (compCache.owner !== owner) {
+    compCache.owner = owner;
+    compCache.text  = pickCompliment(owner);
+    compCache.mark  = COMP_MARKS[Math.floor(Math.random() * COMP_MARKS.length)];
+  }
+  var el = document.createElement('div');
+  el.className = 'compliment';
+  el.innerHTML =
+    '<div class="comp-mark">' + compCache.mark + '</div>' +
+    '<div class="comp-text">' + esc(compCache.text) + '</div>' +
+    (doneCount ? '<div class="comp-sub">' + doneCount + ' completed</div>' : '');
+  return el;
 }
 
 /* ── TOAST ── */
@@ -2037,9 +2202,27 @@ function toggleDone(id, cur) {
            String(now.getMinutes()).padStart(2,'0');
   var entry = cur ? { text:'Task reopened',    time:ts, type:'reopened' }
                   : { text:'Task marked done', time:ts, type:'done' };
-  /* Optimistic flip so the radio responds instantly */
-  if (_t) { _t.done = !cur; if (!cur) _t.completedAt = nowTs; else _t.completedAt = null; render(); }
-  appendLog(id, entry, !cur, nowTs);
+
+  function commit() {
+    /* Optimistic flip so the row responds without waiting on the network */
+    if (_t) { _t.done = !cur; _t.completedAt = cur ? null : nowTs; render(); }
+    appendLog(id, entry, !cur, nowTs);
+  }
+
+  if (cur) { commit(); return; }   /* reopening needs no ceremony */
+
+  /* Completing: chime, buzz, then let the card play out before it moves. */
+  playDoneSound();
+  haptic(22);
+  var card = document.querySelector('.card[data-id="' + id + '"]');
+  if (card) {
+    var radio = card.querySelector('.cradio');
+    if (radio) radio.classList.add('burst');
+    card.classList.add('completing');
+    setTimeout(commit, 430);
+  } else {
+    commit();
+  }
   logActivity({type: cur ? 'reopened' : 'done', taskId:id, taskName:_tn, detail:'', ts:nowTs});
 }
 
@@ -2315,10 +2498,14 @@ function createCard(t, rank) {
   /* Radio click */
   crow.querySelector('.cradio').addEventListener('click', function(e) {
     e.stopPropagation();
-    var r = crow.querySelector('.cradio');
-    r.style.transform = 'scale(.78)';
-    setTimeout(function(){ r.style.transform = ''; }, 180);
-    toggleDone(t.id, t.done);
+    if (!t.done) {
+      toggleDone(t.id, t.done);   /* burst animation takes over from here */
+    } else {
+      var r = crow.querySelector('.cradio');
+      r.style.transform = 'scale(.78)';
+      setTimeout(function(){ r.style.transform = ''; }, 180);
+      toggleDone(t.id, t.done);
+    }
   });
 
   /* Log click */
@@ -3260,9 +3447,15 @@ function render() {
   document.getElementById('stats').textContent =
     active.length + ' active' + (done.length ? ' / ' + done.length + ' done' : '');
 
-  if (!f.length) {
-    list.innerHTML = '<div class="empty">No tasks. Press N or + to add one.</div>';
-    return;
+  /* Someone is selected and has nothing left: say so properly. */
+  if (ownerF && active.length === 0) {
+    list.appendChild(complimentEl(ownerF, done.length));
+  } else {
+    if (ownerF) compCache.owner = null;   /* so the next clear-out gets fresh words */
+    if (!f.length) {
+      list.innerHTML = '<div class="empty">No tasks. Press N or + to add one.</div>';
+      return;
+    }
   }
 
   active.forEach(function(t, i) { list.appendChild(createCard(t, i + 1)); });
@@ -3366,6 +3559,7 @@ document.getElementById('inp-name').addEventListener('keydown', function(e) {
 
 /* ── INIT: called last so all vars are declared ── */
 setTheme(currentTheme);
+setSound(soundOn);
 
 </script>
 </body>

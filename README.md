@@ -177,3 +177,25 @@ changed: the sidebar still lists every date option and category directly.
 
 There is no "All" chip. Tapping the person who is already selected clears the filter
 again, and the red **✕ Clear** chip appears whenever any filter is on.
+
+## Completing a task
+
+Ticking a task off plays a soft three-note chime, a short buzz on phones, and a
+ring-and-tick animation on the circle while the card settles out of the list. The write
+to Supabase happens after the animation, so nothing is lost if you tick and immediately
+navigate away.
+
+The chime is generated with WebAudio rather than shipped as a file, so the page stays
+self-contained. Turn it off in **Settings → Appearance → Sound**; the choice is
+remembered per device.
+
+## Compliments
+
+Filter to a person who has nothing active left and the board says so, by name, drawing
+from twenty different messages so it does not get stale. A fresh one is picked each time
+you come back to that person.
+
+## Toggling filters
+
+Every filter button toggles: tap to select, tap the same one again to clear. That covers
+names, Overdue, This Wk, everything in the Filter sheet, and the desktop sidebar.
