@@ -1039,8 +1039,10 @@ body.light .dash-topbar { background:rgba(240,244,248,.97); }
   /* Recurring needs to read as a different KIND of task at a glance on a
      phone, so it gets a full tint and a thicker edge, not a faint gradient. */
   .card.recur {
-    border-left-width:5px;
-    border-color:var(--rcbd); border-left-color:var(--rc);
+    border-left:5px solid var(--rc);
+    border-top-color:var(--rcbd);
+    border-right-color:var(--rcbd);
+    border-bottom-color:var(--rcbd);
     background:var(--rcbg);
   }
   .rbadge { font-size:10px; padding:2px 8px; }
