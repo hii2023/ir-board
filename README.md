@@ -165,7 +165,7 @@ placed before the base rule it overrides is silently ignored.
 ## Filtering on a phone
 
 The chip bar keeps only the two everyday shortcuts inline — **Overdue** and **This Wk** —
-plus an owner row. Everything else lives behind **☰ Filter**:
+plus a row of names underneath. Everything else lives behind **☰ Filter**:
 
 - **Date**: Next Week, This Month, No Due Date
 - **Category**: every category you've configured, each with a count of active tasks, plus
@@ -174,3 +174,6 @@ plus an owner row. Everything else lives behind **☰ Filter**:
 The Filter chip turns green with a dot when something inside it is on, and **Clear** in the
 sheet resets just those. Overdue and This Wk stay independent of it. On desktop nothing
 changed: the sidebar still lists every date option and category directly.
+
+There is no "All" chip. Tapping the person who is already selected clears the filter
+again, and the red **✕ Clear** chip appears whenever any filter is on.
