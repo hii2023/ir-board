@@ -235,6 +235,21 @@ body.light .topbar { background:rgba(242,247,244,.97); }
   font-family:'JetBrains Mono',monospace;
 }
 
+/* ── UNFINISHED SUBTASK WARNING ── */
+.sub-open {
+  display:flex; align-items:center; gap:9px;
+  padding:9px 11px; margin-bottom:6px;
+  background:var(--s2); border:1px solid var(--b1);
+  border-left:3px solid var(--am);
+  border-radius:var(--rs);
+}
+.sub-open-dot {
+  width:13px; height:13px; border-radius:50%;
+  border:2px solid var(--am); flex-shrink:0;
+}
+.sub-open-txt { flex:1; font-size:13px; color:var(--tx); line-height:1.35; overflow-wrap:anywhere; }
+.sub-more { font-size:11px; color:var(--dim); padding:2px 2px 0; }
+
 .rtogglerow { display:flex; align-items:center; gap:11px; }
 .rtoggle {
   flex-shrink:0; width:44px; height:44px; border-radius:11px;
@@ -1160,6 +1175,30 @@ html, body { max-width:100%; overflow-x:hidden; }
         <div class="dash-act-btns" id="dash-act-btns"></div>
       </div>
       <div id="dash-activity"></div>
+    </div>
+  </div>
+</div>
+
+<!-- UNFINISHED SUBTASKS -->
+<div class="mov" id="subM">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="handle"></div>
+    <div class="si">
+      <div class="shd">
+        <div>
+          <div class="sttl">Subtasks Still Open</div>
+          <div class="ssub" id="sub-count">--</div>
+        </div>
+      </div>
+      <div class="field ffull">
+        <label id="sub-task-name">Task</label>
+        <div id="sub-open-list"></div>
+      </div>
+      <div class="sbtns ffull">
+        <button class="bs" onclick="resolveSub('cancel')">Cancel</button>
+        <button class="bp" onclick="resolveSub('anyway')">Complete Anyway</button>
+      </div>
+      <div class="khint">Completing does not tick the subtasks off</div>
     </div>
   </div>
 </div>
@@ -2211,21 +2250,80 @@ function toggleDone(id, cur) {
     appendLog(id, entry, !cur, nowTs);
   }
 
-  if (cur) { commit(); return; }   /* reopening needs no ceremony */
-
-  /* Completing: chime, buzz, then let the card play out before it moves. */
-  playDoneSound();
-  haptic(22);
-  var card = document.querySelector('.card[data-id="' + id + '"]');
-  if (card) {
-    var radio = card.querySelector('.cradio');
-    if (radio) radio.classList.add('burst');
-    card.classList.add('completing');
-    setTimeout(commit, 430);
-  } else {
+  /* Reopening needs no ceremony. */
+  if (cur) {
     commit();
+    logActivity({type:'reopened', taskId:id, taskName:_tn, detail:'', ts:nowTs});
+    return;
   }
-  logActivity({type: cur ? 'reopened' : 'done', taskId:id, taskName:_tn, detail:'', ts:nowTs});
+
+  /* Ticking the parent while its checklist is unfinished is usually a slip, so
+     show what is still open and let them decide. Nothing is written, and no
+     chime plays, until they choose. */
+  var openSubs = ((_t && _t.subtasks) || []).filter(function(x){ return !x.done; });
+  if (openSubs.length) {
+    askOpenSubtasks(_t, openSubs).then(function(choice) {
+      if (choice === 'anyway') finishDone();
+    });
+    return;
+  }
+  finishDone();
+
+  function finishDone() {
+    /* Chime, buzz, then let the card play out before it moves. */
+    playDoneSound();
+    haptic(22);
+    var card = document.querySelector('.card[data-id="' + id + '"]');
+    if (card) {
+      var radio = card.querySelector('.cradio');
+      if (radio) radio.classList.add('burst');
+      card.classList.add('completing');
+      setTimeout(commit, 430);
+    } else {
+      commit();
+    }
+    logActivity({
+      type:'done', taskId:id, taskName:_tn, ts:nowTs,
+      detail: openSubs.length ? openSubs.length + ' subtask' + (openSubs.length===1?'':'s') + ' still open' : ''
+    });
+  }
+}
+
+/* ── OPEN-SUBTASK PROMPT ──
+   Resolves 'anyway' or 'cancel'. Backdrop tap and Escape both count as cancel,
+   so the promise can never be left hanging. */
+var subResolver = null;
+
+function askOpenSubtasks(t, openSubs) {
+  return new Promise(function(resolve) {
+    subResolver = resolve;
+    var total = (t.subtasks || []).length;
+    var open  = openSubs.length;
+
+    document.getElementById('sub-count').textContent =
+      open + ' of ' + total + ' subtask' + (total === 1 ? '' : 's') + ' not ticked off';
+    document.getElementById('sub-task-name').textContent = t.name;
+
+    var shown = openSubs.slice(0, 6);
+    var html = shown.map(function(x) {
+      return '<div class="sub-open"><div class="sub-open-dot"></div>' +
+             '<div class="sub-open-txt">' + esc(x.text) + '</div></div>';
+    }).join('');
+    if (open > shown.length) {
+      html += '<div class="sub-more">and ' + (open - shown.length) + ' more</div>';
+    }
+    document.getElementById('sub-open-list').innerHTML = html;
+
+    haptic(12);
+    document.getElementById('subM').classList.add('open');
+  });
+}
+
+function resolveSub(choice) {
+  document.getElementById('subM').classList.remove('open');
+  var r = subResolver;
+  subResolver = null;
+  if (r) r(choice);
 }
 
 /* ── LOGS ── */
@@ -3542,9 +3640,10 @@ document.addEventListener('keydown', function(e) {
   var a = document.activeElement;
   var typing = a.isContentEditable || ['INPUT','SELECT','TEXTAREA'].includes(a.tagName);
   if (e.key === 'Escape') {
-    ['addM','editM','logM','setM','instM','recM','filterM'].forEach(function(id) {
+    ['addM','editM','logM','setM','instM','recM','filterM','subM'].forEach(function(id) {
       document.getElementById(id).classList.remove('open');
     });
+    if (subResolver) resolveSub('cancel');
   }
   if (e.key === 'n' && !typing) { e.preventDefault(); openAdd(); }
 });
@@ -3553,9 +3652,10 @@ document.getElementById('inp-name').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') { e.preventDefault(); addTask(); }
 });
 
-['addM','editM','logM','setM','instM','recM','filterM'].forEach(function(id) {
+['addM','editM','logM','setM','instM','recM','filterM','subM'].forEach(function(id) {
   document.getElementById(id).addEventListener('click', function() {
     document.getElementById(id).classList.remove('open');
+    if (id === 'subM' && subResolver) resolveSub('cancel');
   });
 });
 
