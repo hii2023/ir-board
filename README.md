@@ -114,7 +114,7 @@ The top bar uses single letters so everything fits on a phone: **R** recurring,
 | Mark done / reopen | Click the circle on the left |
 | Comments & history | Speech-bubble icon on the card |
 | Reorder | Drag a card (long-press first on mobile) |
-| Filter | Chips at the top, or the sidebar on desktop |
+| Filter | Overdue / This Wk chips, plus **☰ Filter** for date and category (desktop uses the sidebar) |
 | Stats | **D** button |
 | Repeating work | **R** button |
 | Theme / install | Settings (gear) |
@@ -161,3 +161,16 @@ phones, the task count give up their space first.
 **When editing the CSS:** the responsive rules live in one block at the very end of the
 `<style>` tag, and they must stay there. Media queries add no specificity, so a phone rule
 placed before the base rule it overrides is silently ignored.
+
+## Filtering on a phone
+
+The chip bar keeps only the two everyday shortcuts inline — **Overdue** and **This Wk** —
+plus an owner row. Everything else lives behind **☰ Filter**:
+
+- **Date**: Next Week, This Month, No Due Date
+- **Category**: every category you've configured, each with a count of active tasks, plus
+  No Category
+
+The Filter chip turns green with a dot when something inside it is on, and **Clear** in the
+sheet resets just those. Overdue and This Wk stay independent of it. On desktop nothing
+changed: the sidebar still lists every date option and category directly.
