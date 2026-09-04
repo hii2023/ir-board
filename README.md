@@ -228,10 +228,13 @@ still reads it breaks.
 Settings lists each person with a phone field next to their name. Numbers save when you
 leave the field or press Enter.
 
-Once someone has a number saved you can send them a task on WhatsApp:
+Once someone has a number saved, a **send button** appears on the task, next to the
+comment button in the card's action column. It only shows when somebody on that task
+actually has a number, so cards stay clean otherwise.
 
-- tap their name pill on the card (a small arrow marks the ones that can be sent to), or
-- use **Send On WhatsApp** at the bottom of the Edit sheet
+- one reachable assignee: tapping it goes straight to WhatsApp
+- several: it asks which of them first
+- **Send On WhatsApp** at the bottom of the Edit sheet does the same thing
 
 Either opens WhatsApp with the task already written out — name, description, due date,
 category, subtasks and link. You still press send yourself; nothing is sent automatically.

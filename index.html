@@ -266,9 +266,20 @@ body.light .topbar { background:rgba(242,247,244,.97); }
 }
 .uphone:focus { border-color:var(--ac); }
 
-/* Assignee pill that can be tapped to send the task on WhatsApp */
-.ownpill.sendable { cursor:pointer; }
-.sendmark { margin-left:4px; font-size:8px; opacity:.75; }
+/* Card action column: send sits beside the comment button */
+.cacts { display:flex; align-items:flex-start; gap:5px; }
+.csend {
+  width:36px; height:36px; border-radius:6px;
+  background:none; border:1px solid var(--b1);
+  color:var(--dim); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; transition:all .15s; padding:0;
+}
+.csend svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.csend:hover { border-color:var(--ac); color:var(--ac); }
+
+/* Send picker sheet */
+.sendpick { display:flex; flex-direction:column; gap:7px; }
 
 /* "Send to" row in the edit sheet */
 .sendrow { display:flex; flex-wrap:wrap; gap:7px; }
@@ -1233,6 +1244,26 @@ html, body { max-width:100%; overflow-x:hidden; }
   </div>
 </div>
 
+<!-- SEND PICKER -->
+<div class="mov" id="sendM">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="handle"></div>
+    <div class="si">
+      <div class="shd">
+        <div>
+          <div class="sttl">Send On WhatsApp</div>
+          <div class="ssub" id="send-task-name">--</div>
+        </div>
+      </div>
+      <div class="field ffull">
+        <label>Who To Send To</label>
+        <div class="sendpick" id="send-pick"></div>
+      </div>
+      <div class="sbtns"><button class="bs" onclick="closeSendPicker()">Cancel</button></div>
+    </div>
+  </div>
+</div>
+
 <!-- UNFINISHED SUBTASKS -->
 <div class="mov" id="subM">
   <div class="sheet" onclick="event.stopPropagation()">
@@ -1860,6 +1891,7 @@ function catColor(name) {
 }
 
 var ICON_LOG  = '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+var ICON_SEND = '<svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>';
 var ICON_LINK = '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
 
 /* ── ASSIGNEES ──
@@ -1911,6 +1943,22 @@ function taskMessage(t) {
   lines.push('- ' + BOARD_NAME);
   return lines.join('\n');
 }
+
+function openSendPicker(taskId) {
+  var t = tasks.find(function(x){ return x.id === taskId; });
+  if (!t) return;
+  document.getElementById('send-task-name').textContent = t.name;
+  document.getElementById('send-pick').innerHTML = ownersOf(t).map(function(o) {
+    var has = !!waNumber(phoneOf(o));
+    var oS = ownerStyle(o);
+    return '<button type="button" class="sendbtn"' + (has ? '' : ' disabled') +
+      ' onclick="closeSendPicker();sendTaskTo(\'' + taskId + '\',\'' + esc(o).replace(/'/g, "\\'") + '\')"' +
+      ' style="' + (has ? 'border-color:' + oS.c + ';color:' + oS.c : '') + '">' +
+      '\u27A4 ' + esc(o) + (has ? '' : ' (no number)') + '</button>';
+  }).join('');
+  document.getElementById('sendM').classList.add('open');
+}
+function closeSendPicker() { document.getElementById('sendM').classList.remove('open'); }
 
 function sendTaskTo(taskId, name) {
   var t = tasks.find(function(x){ return x.id === taskId; });
@@ -2738,18 +2786,22 @@ function createCard(t, rank) {
     return '<button class="st-badge" style="' + clr + '" data-stid="' + t.id + '">' + stDone + '/' + stSubs.length + '</button>';
   })() : '';
 
+  /* Send sits in the card's action column, next to the comment button, rather
+     than on the name pill inside the task. Only shown when someone on the task
+     actually has a number saved. */
+  var sendable = owns.filter(function(o){ return !!waNumber(phoneOf(o)); });
+  var sendBtnHTML = sendable.length
+    ? '<button class="csend" title="Send this task on WhatsApp">' + ICON_SEND + '</button>'
+    : '';
+
   var crow = document.createElement('div');
   crow.className = 'crow';
   var dueLineHTML = due ? '<div class="cdue ' + due.cls + '" style="margin-top:3px">&#128197; ' + due.label + '</div>' : '';
   var catLineHTML = cc ? '<div class="ccat"><span class="ccatpill" style="background:' + cc + '18;color:' + cc + ';border:1px solid ' + cc + '30">' + t.category + '</span></div>' : '';
   var ownerLineHTML = owns.map(function(o, oi) {
     var oS = ownerStyle(o);
-    var hasPhone = !!waNumber(phoneOf(o));
-    return '<span class="ccatpill ownpill' + (hasPhone ? ' sendable' : '') + '"' +
-      ' data-send-task="' + t.id + '" data-send-owner="' + esc(o) + '"' +
-      ' title="' + (hasPhone ? 'Send this task to ' + esc(o) + ' on WhatsApp' : esc(o) + ' has no phone number saved') + '"' +
-      ' style="background:' + oS.bg + ';color:' + oS.c + ';margin-left:' + ((cc || oi) ? '6' : '0') + 'px">' +
-      esc(o) + (hasPhone ? '<span class="sendmark">\u27A4</span>' : '') + '</span>';
+    return '<span class="ccatpill" style="background:' + oS.bg + ';color:' + oS.c +
+      ';margin-left:' + ((cc || oi) ? '6' : '0') + 'px">' + esc(o) + '</span>';
   }).join('') +
     (t.recurringId ? '<span class="rbadge" title="Created by a recurring schedule">&#8635; Recurring</span>' : '');
   crow.innerHTML =
@@ -2759,7 +2811,7 @@ function createCard(t, rank) {
       dueLineHTML +
       (cc || true ? '<div class="ccat" style="display:flex;align-items:center;margin-top:3px">' + (cc ? '<span class="ccatpill" style="background:' + cc + '18;color:' + cc + ';border:1px solid ' + cc + '30">' + t.category + '</span>' : '') + ownerLineHTML + '</div>' : '') +
     '</div>' +
-    '<button class="clog">' + ICON_LOG + logBadgeHTML + '</button>' + stBadge;
+    '<div class="cacts">' + sendBtnHTML + '<button class="clog">' + ICON_LOG + logBadgeHTML + '</button></div>' + stBadge;
   card.appendChild(crow);
   var wmDiv = document.createElement('div');
   wmDiv.className = 'cwm';
@@ -2814,22 +2866,25 @@ function createCard(t, rank) {
     openLog(t.id);
   });
 
+  /* Send click: straight through when only one person can be reached,
+     otherwise ask which of them. */
+  var sendEl = crow.querySelector('.csend');
+  if (sendEl) {
+    sendEl.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (sendable.length === 1) sendTaskTo(t.id, sendable[0]);
+      else openSendPicker(t.id);
+    });
+  }
+
   /* Double-click = open edit modal */
   card.addEventListener('dblclick', function(e) {
-    if (!e.target.closest('.cradio, .clog, .linkbtn, .ownpill')) openEdit(t.id);
-  });
-
-  /* Tap an assignee to send them the task */
-  crow.querySelectorAll('.ownpill').forEach(function(pill) {
-    pill.addEventListener('click', function(e) {
-      e.stopPropagation();
-      sendTaskTo(pill.dataset.sendTask, pill.dataset.sendOwner);
-    });
+    if (!e.target.closest('.cradio, .clog, .csend, .linkbtn')) openEdit(t.id);
   });
 
   /* Mouse drag */
   card.addEventListener('mousedown', function(e) {
-    if (e.button !== 0 || e.target.closest('.cradio, .clog, .linkbtn, .ownpill')) return;
+    if (e.button !== 0 || e.target.closest('.cradio, .clog, .csend, .linkbtn')) return;
     var sx = e.clientX, sy = e.clientY, moved = false;
     function onMove(ev) {
       if (!moved && (Math.abs(ev.clientX-sx) > 5 || Math.abs(ev.clientY-sy) > 5)) {
@@ -2850,7 +2905,7 @@ function createCard(t, rank) {
   /* Touch drag (long press) + double-tap */
   var lpt = null, tSX = 0, tSY = 0, tMv = false, tDr = false, lastTap = 0;
   card.addEventListener('touchstart', function(e) {
-    if (e.target.closest('.cradio, .clog, .linkbtn, .ownpill')) return;
+    if (e.target.closest('.cradio, .clog, .csend, .linkbtn')) return;
     tSX = e.touches[0].clientX;
     tSY = e.touches[0].clientY;
     tMv = false; tDr = false;
@@ -2874,7 +2929,7 @@ function createCard(t, rank) {
   card.addEventListener('touchend', function(e) {
     clearTimeout(lpt);
     if (tDr) { tDr = false; endDrag(); return; }
-    if (!e.target.closest('.cradio, .clog, .linkbtn, .ownpill')) {
+    if (!e.target.closest('.cradio, .clog, .csend, .linkbtn')) {
       var now = Date.now();
       if (now - lastTap < 340) { e.preventDefault(); openEdit(t.id); }
       lastTap = now;
@@ -3860,7 +3915,7 @@ document.addEventListener('keydown', function(e) {
   var a = document.activeElement;
   var typing = a.isContentEditable || ['INPUT','SELECT','TEXTAREA'].includes(a.tagName);
   if (e.key === 'Escape') {
-    ['addM','editM','logM','setM','instM','recM','filterM','subM'].forEach(function(id) {
+    ['addM','editM','logM','setM','instM','recM','filterM','subM','sendM'].forEach(function(id) {
       document.getElementById(id).classList.remove('open');
     });
     if (subResolver) resolveSub('cancel');
@@ -3872,7 +3927,7 @@ document.getElementById('inp-name').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') { e.preventDefault(); addTask(); }
 });
 
-['addM','editM','logM','setM','instM','recM','filterM','subM'].forEach(function(id) {
+['addM','editM','logM','setM','instM','recM','filterM','subM','sendM'].forEach(function(id) {
   document.getElementById(id).addEventListener('click', function() {
     document.getElementById(id).classList.remove('open');
     if (id === 'subM' && subResolver) resolveSub('cancel');
