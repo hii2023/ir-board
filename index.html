@@ -250,6 +250,39 @@ body.light .topbar { background:rgba(242,247,244,.97); }
 .sub-open-txt { flex:1; font-size:13px; color:var(--tx); line-height:1.35; overflow-wrap:anywhere; }
 .sub-more { font-size:11px; color:var(--dim); padding:2px 2px 0; }
 
+/* ── SETTINGS: people with phone numbers ── */
+.urow {
+  display:flex; align-items:center; gap:8px;
+  padding:7px 9px; margin-bottom:6px;
+  background:var(--s2); border:1px solid var(--b1);
+  border-radius:var(--rs);
+}
+.uname { font-size:13px; font-weight:800; min-width:74px; flex-shrink:0; }
+.uphone {
+  flex:1; min-width:0;
+  background:var(--s1); border:1px solid var(--b1); border-radius:var(--rs);
+  color:var(--tx); font-family:'JetBrains Mono',monospace; font-size:12px;
+  padding:7px 9px; outline:none;
+}
+.uphone:focus { border-color:var(--ac); }
+
+/* Assignee pill that can be tapped to send the task on WhatsApp */
+.ownpill.sendable { cursor:pointer; }
+.sendmark { margin-left:4px; font-size:8px; opacity:.75; }
+
+/* "Send to" row in the edit sheet */
+.sendrow { display:flex; flex-wrap:wrap; gap:7px; }
+.sendbtn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:9px 13px; border-radius:var(--rs);
+  border:1.5px solid var(--b1); background:var(--s2);
+  color:var(--tx); font-family:'Outfit',sans-serif;
+  font-size:13px; font-weight:700; cursor:pointer;
+  transition:all .15s;
+}
+.sendbtn:hover:not(:disabled) { border-color:var(--ac); color:var(--ac); }
+.sendbtn:disabled { opacity:.45; cursor:default; }
+
 .rtogglerow { display:flex; align-items:center; gap:11px; }
 .rtoggle {
   flex-shrink:0; width:44px; height:44px; border-radius:11px;
@@ -1276,7 +1309,7 @@ html, body { max-width:100%; overflow-x:hidden; }
       </div>
       <div class="field ffull"><label>Task Name</label><input class="xl" id="rec-name" placeholder="What repeats?" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/></div>
       <div class="field ffull"><label>Description</label><textarea id="rec-desc" placeholder="Optional details..." rows="2" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"></textarea></div>
-      <div class="field ffull"><label>Assign To</label><select id="rec-owner" autocomplete="off"></select></div>
+      <div class="field ffull"><label>Assign To</label><div class="catgrid" id="recOG"></div></div>
       <div class="field ffull"><label>Repeats</label><div class="freqgrid" id="rec-freq"></div></div>
       <div class="field ffull" id="rec-days-wrap"><label>On These Days</label><div class="daygrid" id="rec-days"></div></div>
       <div class="field ffull" id="rec-dom-wrap" style="display:none"><label>Day Of Month</label><input id="rec-dom" type="number" min="1" max="31" placeholder="1-31"/></div>
@@ -1308,7 +1341,7 @@ html, body { max-width:100%; overflow-x:hidden; }
       <div class="field ffull"><label>Task Name</label><input class="xl" id="inp-name" placeholder="What needs to be done?" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/></div>
       <div class="field ffull"><label>Description</label><textarea id="inp-desc" placeholder="Optional details..." rows="2" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"></textarea></div>
       <div class="frow">
-        <div class="field"><label>Owner</label><select id="inp-owner" autocomplete="off"></select></div>
+        <div class="field ffull"><label>Assign To</label><div class="catgrid" id="addOG"></div></div>
         <div class="field"><label>Due Date</label><input id="inp-due" type="date"/></div>
       </div>
       <div class="field ffull" id="addCW" style="display:none"><label>Category</label><div class="catgrid" id="addCG"></div></div>
@@ -1360,7 +1393,7 @@ html, body { max-width:100%; overflow-x:hidden; }
       <div class="field ffull"><label>Task Name</label><input class="xl" id="edit-name" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/></div>
       <div class="field ffull"><label>Description</label><textarea id="edit-desc" rows="3" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"></textarea></div>
       <div class="frow">
-        <div class="field"><label>Owner</label><select id="edit-owner" autocomplete="off"></select></div>
+        <div class="field ffull"><label>Assign To</label><div class="catgrid" id="editOG"></div></div>
         <div class="field"><label>Due Date</label><input id="edit-due" type="date"/></div>
       </div>
       <div class="field ffull" id="editCW" style="display:none"><label>Category</label><div class="catgrid" id="editCG"></div></div>
@@ -1370,6 +1403,10 @@ html, body { max-width:100%; overflow-x:hidden; }
         <input id="est-inp" class="st-addinp" placeholder="Type subtask and press Enter..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/>
       </div>
       <div class="field ffull"><label>Link (optional)</label><input id="edit-link" type="url" placeholder="https://..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"/></div>
+      <div class="field ffull" id="editSendWrap">
+        <label>Send On WhatsApp</label>
+        <div class="sendrow" id="edit-send"></div>
+      </div>
       <div class="sbtns ffull">
         <button class="bs" onclick="closeEdit()">Cancel</button>
         <button class="bp" onclick="saveEdit()">Save Changes</button>
@@ -1470,6 +1507,7 @@ function esc(v) {
 function fromRow(r) {
   return {
     id: r.id, name: r.name, desc: r.descr || '', owner: r.owner || '',
+    owners: (Array.isArray(r.owners) && r.owners.length) ? r.owners : (r.owner ? [r.owner] : []),
     category: r.category || '', dueDate: r.due_date || '', link: r.link || '',
     done: !!r.done, order: Number(r.sort_order || 0),
     createdAt: Number(r.created_at || 0),
@@ -1516,6 +1554,7 @@ async function reloadConfig() {
   (res.data || []).forEach(function(row) {
     var list = (row.data && row.data.list) || [];
     if (row.key === 'users') { users = list; syncSelects(); }
+    if (row.key === 'phones') { phones = (row.data && row.data.map) || {}; }
     if (row.key === 'categories') {
       categories = list;
       buildCatGrid('add'); buildCatGrid('edit');
@@ -1544,6 +1583,11 @@ async function appendLog(id, entry, done, completedAt) {
   });
   sbErr('Save')(res);
   await reloadTasks();
+}
+async function savePhones(map) {
+  var res = await sb.from('irb_config').upsert({key:'phones', data:{map:map}}, {onConflict:'key'});
+  sbErr('Save phone')(res);
+  await reloadConfig();
 }
 async function saveConfig(key, list) {
   var res = await sb.from('irb_config').upsert({key:key, data:{list:list}}, {onConflict:'key'});
@@ -1818,6 +1862,68 @@ function catColor(name) {
 var ICON_LOG  = '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
 var ICON_LINK = '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
 
+/* ── ASSIGNEES ──
+   A task can be owned by several people. `owners` is the list; the legacy
+   `owner` string is kept in sync as the first name so older rows and anything
+   still reading it keep working. */
+function ownersOf(t) {
+  if (t && Array.isArray(t.owners) && t.owners.length) return t.owners;
+  return (t && t.owner) ? [t.owner] : [];
+}
+function ownedBy(t, name) { return ownersOf(t).indexOf(name) !== -1; }
+
+/* ── PHONE BOOK ──
+   Kept in its own config entry keyed by user name, so the users list stays a
+   plain array of names. */
+var phones = {};
+function phoneOf(name) { return (phones && phones[name]) || ''; }
+
+/* wa.me wants digits only, with a country code and no plus sign.
+   A number saved the way people actually type it here - 98765 43210, or with
+   a trunk 0, or already +91 - all has to end up the same. */
+function waNumber(raw) {
+  var d = String(raw || '').replace(/\D/g, '');
+  d = d.replace(/^0+/, '');          /* trunk prefix, not part of the number */
+  if (!d) return '';
+  if (d.length === 10) d = '91' + d; /* bare local number, assume India */
+  return d;
+}
+
+/* ── SEND A TASK ── */
+var BOARD_NAME = 'India Recycles Board';
+function taskMessage(t) {
+  var lines = ['*' + t.name + '*'];
+  if (t.desc) lines.push(t.desc);
+  var bits = [];
+  if (t.dueDate) {
+    var d = fmtDue(t.dueDate);
+    bits.push('Due: ' + (d ? d.label : t.dueDate));
+  }
+  if (t.category) bits.push('Category: ' + t.category);
+  if (bits.length) lines.push(bits.join('  |  '));
+  var subs = t.subtasks || [];
+  if (subs.length) {
+    lines.push('');
+    subs.forEach(function(x){ lines.push((x.done ? '[x] ' : '[ ] ') + x.text); });
+  }
+  if (t.link) { lines.push(''); lines.push(t.link); }
+  lines.push('');
+  lines.push('- ' + BOARD_NAME);
+  return lines.join('\n');
+}
+
+function sendTaskTo(taskId, name) {
+  var t = tasks.find(function(x){ return x.id === taskId; });
+  if (!t) return;
+  var num = waNumber(phoneOf(name));
+  if (!num) {
+    toast('No phone number saved for ' + name);
+    return;
+  }
+  var url = 'https://wa.me/' + num + '?text=' + encodeURIComponent(taskMessage(t));
+  window.open(url, '_blank', 'noopener');
+}
+
 /* ── STATE ── */
 var tasks      = [];
 var users      = [];
@@ -1837,21 +1943,39 @@ async function initConfig() {
   var seed = [];
   if (have.indexOf('users') === -1)      seed.push({key:'users',      data:{list:['Parking']}});
   if (have.indexOf('categories') === -1) seed.push({key:'categories', data:{list:[]}});
+  if (have.indexOf('phones') === -1)     seed.push({key:'phones',     data:{map:{}}});
   if (seed.length) await sb.from('irb_config').insert(seed);
 }
 
+/* Selected assignees for each of the three forms. */
+var addOwners = [], editOwners = [], recOwners = [];
+
+function ownerSel(mode) {
+  return mode === 'add' ? addOwners : mode === 'edit' ? editOwners : recOwners;
+}
+function buildOwnerGrid(mode) {
+  var g = document.getElementById(mode === 'add' ? 'addOG' : mode === 'edit' ? 'editOG' : 'recOG');
+  if (!g) return;
+  var sel = ownerSel(mode);
+  g.innerHTML = users.map(function(u) {
+    var oS = ownerStyle(u);
+    var on = sel.indexOf(u) !== -1;
+    return '<div class="catopt' + (on ? ' sel' : '') + '" onclick="pickOwner(\'' + mode + '\',\'' + u + '\')" style="' +
+      (on ? ('border-color:' + oS.c + ';color:' + oS.c + ';background:' + oS.bg) : '') + '">' + esc(u) + '</div>';
+  }).join('') || '<span style="color:var(--dim);font-size:11px">Add people in Settings first.</span>';
+}
+function pickOwner(mode, u) {
+  var sel = ownerSel(mode);
+  var at = sel.indexOf(u);
+  if (at === -1) sel.push(u); else sel.splice(at, 1);
+  buildOwnerGrid(mode);
+}
+function defaultOwners() {
+  return users.indexOf('Parking') !== -1 ? ['Parking'] : (users.length ? [users[0]] : []);
+}
+
 function syncSelects() {
-  ['inp-owner','edit-owner','rec-owner'].forEach(function(id) {
-    var sel = document.getElementById(id);
-    if (!sel) return;
-    var cur = sel.value;
-    sel.innerHTML = users.map(function(u) {
-      return '<option' + (u === cur ? ' selected' : '') + '>' + u + '</option>';
-    }).join('');
-    if (!cur || !users.includes(cur)) {
-      sel.value = users.includes('Parking') ? 'Parking' : (users[0] || '');
-    }
-  });
+  buildOwnerGrid('add'); buildOwnerGrid('edit'); buildOwnerGrid('rec');
 }
 
 /* ── SETTINGS ── */
@@ -1862,8 +1986,32 @@ function renderSettingsLists() {
   var ul = document.getElementById('userList');
   ul.innerHTML = users.map(function(u) {
     var os = ownerStyle(u);
-    return '<div class="ipill"><span style="color:' + os.c + '">' + u + '</span><button class="xb" onclick="removeUser(\'' + u + '\')">&#215;</button></div>';
+    return '<div class="urow">' +
+      '<span class="uname" style="color:' + os.c + '">' + esc(u) + '</span>' +
+      '<input class="uphone" type="tel" inputmode="tel" placeholder="Phone for WhatsApp"' +
+        ' value="' + esc(phoneOf(u)) + '" data-user="' + esc(u) + '"' +
+        ' autocomplete="off" autocorrect="off" spellcheck="false" data-form-type="other"/>' +
+      '<button class="xb" onclick="removeUser(\'' + u + '\')" title="Remove">&#215;</button>' +
+    '</div>';
   }).join('') || '<span style="color:var(--dim);font-size:11px">None yet.</span>';
+
+  /* Save on blur or Enter rather than on every keystroke. */
+  ul.querySelectorAll('.uphone').forEach(function(inp) {
+    var commit = function() {
+      var who = inp.dataset.user;
+      var val = inp.value.trim();
+      if (val === (phoneOf(who) || '')) return;
+      var next = Object.assign({}, phones);
+      if (val) next[who] = val; else delete next[who];
+      phones = next;
+      savePhones(next).then(function(){
+        toast(val ? 'Saved number for ' + who : 'Removed number for ' + who);
+        render();
+      });
+    };
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+  });
 
   var cl = document.getElementById('catList');
   cl.innerHTML = categories.map(function(c) {
@@ -1882,7 +2030,7 @@ async function addUser() {
 }
 async function removeUser(n) {
   if (users.length <= 1) { toast('Keep at least one user'); return; }
-  var owned = tasks.filter(function(t){ return t.owner === n; }).length;
+  var owned = tasks.filter(function(t){ return ownedBy(t, n); }).length;
   if (owned && !confirm(n + ' still owns ' + owned + ' task' + (owned===1?'':'s') +
       '. Remove from the user list anyway? The tasks stay, but you should reassign them.')) return;
   if (ownerF === n) ownerF = '';
@@ -1956,7 +2104,7 @@ function fmtDue(str) {
 /* ── FILTER ── */
 function getFiltered() {
   var r = tasks.slice();
-  if (ownerF) r = r.filter(function(t){ return t.owner === ownerF; });
+  if (ownerF) r = r.filter(function(t){ return ownedBy(t, ownerF); });
   if (dateF === 'overdue') {
     var now = new Date(); now.setHours(0,0,0,0);
     r = r.filter(function(t){ return t.dueDate && new Date(t.dueDate + 'T00:00:00') < now; });
@@ -1977,7 +2125,12 @@ function getFiltered() {
 
 function renderFilters() {
   var oc = {};
-  tasks.forEach(function(t){ if (!t.done) oc[t.owner] = (oc[t.owner]||0) + 1; });
+  tasks.forEach(function(t){
+    if (t.done) return;
+    /* A task with two assignees counts once for each of them, so the numbers
+       stay per-person rather than inventing a combined bucket. */
+    ownersOf(t).forEach(function(o){ oc[o] = (oc[o]||0) + 1; });
+  });
   var now2 = new Date(); now2.setHours(0,0,0,0);
   var hasOverdue = tasks.some(function(t){ return !t.done && t.dueDate && new Date(t.dueDate+'T00:00:00') < now2; });
 
@@ -2121,13 +2274,12 @@ function openAdd() {
   buildCatGrid('add');
   document.getElementById('inp-due').value = new Date().toISOString().slice(0,10);
   document.getElementById('inp-link').value = '';
+  addOwners = defaultOwners(); buildOwnerGrid('add');
   addRecOn = false; addFreq = 'weekly'; addDays = [new Date().getDay()];
   document.getElementById('add-dom').value = '';
   document.getElementById('add-start').value = new Date().toISOString().slice(0,10);
   document.getElementById('add-end').value = '';
   syncAddRecur();
-  var sel = document.getElementById('inp-owner');
-  sel.value = users.includes('Parking') ? 'Parking' : (users[0] || '');
   pendingSubtasks = [];
   renderAddStList();
   document.getElementById('addM').classList.add('open');
@@ -2151,12 +2303,13 @@ async function addTask() {
            now.getFullYear() + ' ' +
            String(now.getHours()).padStart(2,'0') + ':' +
            String(now.getMinutes()).padStart(2,'0');
-  var owner = document.getElementById('inp-owner').value;
+  var owner = addOwners[0] || '';
   var createdLog = { text: 'Task created by ' + owner, time: ts, type: 'created' };
   var res = await sb.from('irb_tasks').insert({
     name:       name,
     descr:      document.getElementById('inp-desc').value.trim(),
     owner:      owner,
+    owners:     addOwners.slice(),
     category:   addSelCat || '',
     due_date:   document.getElementById('inp-due').value || '',
     link:       document.getElementById('inp-link').value.trim() || '',
@@ -2183,7 +2336,8 @@ async function addRecurringTask(name) {
   var res = await sb.from('irb_recurring').insert({
     name:     name,
     descr:    document.getElementById('inp-desc').value.trim(),
-    owner:    document.getElementById('inp-owner').value,
+    owner:    addOwners[0] || '',
+    owners:   addOwners.slice(),
     category: addSelCat || '',
     link:     document.getElementById('inp-link').value.trim(),
     subtasks: pendingSubtasks.map(function(x){ return {text:x.text, done:false}; }),
@@ -2210,18 +2364,34 @@ function openEdit(id) {
   document.getElementById('edit-desc').value = t.desc || '';
   document.getElementById('edit-due').value  = t.dueDate || '';
   document.getElementById('edit-link').value = t.link || '';
-  var sel = document.getElementById('edit-owner');
-  sel.innerHTML = users.map(function(u){
-    return '<option' + (u===t.owner?' selected':'') + '>' + u + '</option>';
-  }).join('');
+  editOwners = ownersOf(t).slice();
+  buildOwnerGrid('edit');
   buildCatGrid('edit');
   var f = getFiltered();
   var rank = f.filter(function(x){ return !x.done; }).findIndex(function(x){ return x.id===id; }) + 1;
-  document.getElementById('edit-sub').textContent = 'Rank #' + (rank > 0 ? rank : '?') + ' - ' + t.owner;
+  document.getElementById('edit-sub').textContent = 'Rank #' + (rank > 0 ? rank : '?') + ' - ' + (ownersOf(t).join(', ') || 'Unassigned');
+  renderSendRow(t);
   document.getElementById('editM').classList.add('open');
   renderEstList();
   setTimeout(function(){ var el = document.getElementById('edit-name'); el.focus(); el.select(); }, 260);
 }
+function renderSendRow(t) {
+  var el = document.getElementById('edit-send');
+  if (!el) return;
+  var owns = ownersOf(t);
+  if (!owns.length) {
+    el.innerHTML = '<span style="color:var(--dim);font-size:11px">Assign someone first.</span>';
+    return;
+  }
+  el.innerHTML = owns.map(function(o) {
+    var has = !!waNumber(phoneOf(o));
+    return '<button type="button" class="sendbtn"' + (has ? '' : ' disabled') +
+      ' onclick="sendTaskTo(\'' + t.id + '\',\'' + esc(o).replace(/'/g, "\\'") + '\')"' +
+      ' title="' + (has ? 'Open WhatsApp to ' + esc(o) : 'Add a number for ' + esc(o) + ' in Settings') + '">' +
+      '\u27A4 ' + esc(o) + (has ? '' : ' (no number)') + '</button>';
+  }).join('');
+}
+
 function closeEdit() { document.getElementById('editM').classList.remove('open'); editId = null; }
 async function saveEdit() {
   var name = document.getElementById('edit-name').value.trim();
@@ -2230,7 +2400,8 @@ async function saveEdit() {
   await taskUpdate(editId, {
     name:     name,
     desc:     document.getElementById('edit-desc').value.trim(),
-    owner:    document.getElementById('edit-owner').value,
+    owner:    editOwners[0] || '',
+    owners:   editOwners.slice(),
     category: editSelCat || '',
     dueDate:  document.getElementById('edit-due').value || '',
     link:     document.getElementById('edit-link').value.trim() || ''
@@ -2554,7 +2725,7 @@ function createCard(t, rank) {
   card.className = 'card' + (t.done ? ' done' : '') + (t.recurringId ? ' recur' : '');
   card.dataset.id = t.id;
   var due = fmtDue(t.dueDate);
-  var os  = ownerStyle(t.owner || '');
+  var owns = ownersOf(t);
   var cc  = t.category ? catColor(t.category) : null;
   var lc  = (t.logs || []).filter(function(l){ return l.type !== 'created'; }).length;
 
@@ -2571,7 +2742,15 @@ function createCard(t, rank) {
   crow.className = 'crow';
   var dueLineHTML = due ? '<div class="cdue ' + due.cls + '" style="margin-top:3px">&#128197; ' + due.label + '</div>' : '';
   var catLineHTML = cc ? '<div class="ccat"><span class="ccatpill" style="background:' + cc + '18;color:' + cc + ';border:1px solid ' + cc + '30">' + t.category + '</span></div>' : '';
-  var ownerLineHTML = '<span class="ccatpill" style="background:' + os.bg + ';color:' + os.c + ';margin-left:' + (cc ? '6' : '0') + 'px">' + t.owner + '</span>' +
+  var ownerLineHTML = owns.map(function(o, oi) {
+    var oS = ownerStyle(o);
+    var hasPhone = !!waNumber(phoneOf(o));
+    return '<span class="ccatpill ownpill' + (hasPhone ? ' sendable' : '') + '"' +
+      ' data-send-task="' + t.id + '" data-send-owner="' + esc(o) + '"' +
+      ' title="' + (hasPhone ? 'Send this task to ' + esc(o) + ' on WhatsApp' : esc(o) + ' has no phone number saved') + '"' +
+      ' style="background:' + oS.bg + ';color:' + oS.c + ';margin-left:' + ((cc || oi) ? '6' : '0') + 'px">' +
+      esc(o) + (hasPhone ? '<span class="sendmark">\u27A4</span>' : '') + '</span>';
+  }).join('') +
     (t.recurringId ? '<span class="rbadge" title="Created by a recurring schedule">&#8635; Recurring</span>' : '');
   crow.innerHTML =
     '<div class="cradio' + (t.done ? ' done' : '') + '"></div>' +
@@ -2637,12 +2816,20 @@ function createCard(t, rank) {
 
   /* Double-click = open edit modal */
   card.addEventListener('dblclick', function(e) {
-    if (!e.target.closest('.cradio, .clog, .linkbtn')) openEdit(t.id);
+    if (!e.target.closest('.cradio, .clog, .linkbtn, .ownpill')) openEdit(t.id);
+  });
+
+  /* Tap an assignee to send them the task */
+  crow.querySelectorAll('.ownpill').forEach(function(pill) {
+    pill.addEventListener('click', function(e) {
+      e.stopPropagation();
+      sendTaskTo(pill.dataset.sendTask, pill.dataset.sendOwner);
+    });
   });
 
   /* Mouse drag */
   card.addEventListener('mousedown', function(e) {
-    if (e.button !== 0 || e.target.closest('.cradio, .clog, .linkbtn')) return;
+    if (e.button !== 0 || e.target.closest('.cradio, .clog, .linkbtn, .ownpill')) return;
     var sx = e.clientX, sy = e.clientY, moved = false;
     function onMove(ev) {
       if (!moved && (Math.abs(ev.clientX-sx) > 5 || Math.abs(ev.clientY-sy) > 5)) {
@@ -2663,7 +2850,7 @@ function createCard(t, rank) {
   /* Touch drag (long press) + double-tap */
   var lpt = null, tSX = 0, tSY = 0, tMv = false, tDr = false, lastTap = 0;
   card.addEventListener('touchstart', function(e) {
-    if (e.target.closest('.cradio, .clog, .linkbtn')) return;
+    if (e.target.closest('.cradio, .clog, .linkbtn, .ownpill')) return;
     tSX = e.touches[0].clientX;
     tSY = e.touches[0].clientY;
     tMv = false; tDr = false;
@@ -2687,7 +2874,7 @@ function createCard(t, rank) {
   card.addEventListener('touchend', function(e) {
     clearTimeout(lpt);
     if (tDr) { tDr = false; endDrag(); return; }
-    if (!e.target.closest('.cradio, .clog, .linkbtn')) {
+    if (!e.target.closest('.cradio, .clog, .linkbtn, .ownpill')) {
       var now = Date.now();
       if (now - lastTap < 340) { e.preventDefault(); openEdit(t.id); }
       lastTap = now;
@@ -2706,11 +2893,13 @@ function createDoneCard(t) {
   var card = document.createElement('div');
   card.className = 'donecard' + (t.recurringId ? ' recur' : '');
   card.dataset.id = t.id;
-  var os = ownerStyle(t.owner || '');
   card.innerHTML =
     '<div class="doner" title="Reopen task"></div>' +
     '<div class="donename">' + t.name + '</div>' +
-    '<span class="doneow" style="background:' + os.bg + ';color:' + os.c + '">' + t.owner + '</span>';
+    ownersOf(t).map(function(o) {
+      var oS = ownerStyle(o);
+      return '<span class="doneow" style="background:' + oS.bg + ';color:' + oS.c + '">' + esc(o) + '</span>';
+    }).join('');
   card.querySelector('.doner').addEventListener('click', function(e) {
     e.stopPropagation(); toggleDone(t.id, true);
   });
@@ -2733,7 +2922,10 @@ function renderTopbarOwners() {
   var el = document.getElementById('tb-owners');
   if (!el) return;
   var oc = {};
-  tasks.forEach(function(t){ if (!t.done) oc[t.owner] = (oc[t.owner]||0) + 1; });
+  tasks.forEach(function(t){
+    if (t.done) return;
+    ownersOf(t).forEach(function(o){ oc[o] = (oc[o]||0) + 1; });
+  });
   var html = '';
   users.forEach(function(u) {
     var cnt = oc[u] || 0;
@@ -3030,6 +3222,7 @@ var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 function fromRecRow(r) {
   return {
     id:r.id, name:r.name, desc:r.descr || '', owner:r.owner || '',
+    owners:(Array.isArray(r.owners) && r.owners.length) ? r.owners : (r.owner ? [r.owner] : []),
     category:r.category || '', link:r.link || '', subtasks:r.subtasks || [],
     freq:r.freq || 'weekly', weekdays:r.weekdays || [],
     dayOfMonth:r.day_of_month, startDate:r.start_date, endDate:r.end_date,
@@ -3195,18 +3388,15 @@ function openRecEdit(id) {
   document.getElementById('rec-end').value   = (r && r.endDate) ? r.endDate : '';
   document.getElementById('rec-dom').value   = (r && r.dayOfMonth) ? r.dayOfMonth : '';
 
-  var sel = document.getElementById('rec-owner');
-  sel.innerHTML = users.map(function(u){
-    return '<option' + ((r && r.owner === u) ? ' selected' : '') + '>' + u + '</option>';
-  }).join('');
-  if (!r) sel.value = users.indexOf('Parking') !== -1 ? 'Parking' : (users[0] || '');
+  recOwners = r ? ownersOf(r).slice() : defaultOwners();
+  buildOwnerGrid('rec');
 
   recFreq   = r ? r.freq : 'weekly';
   recDays   = r ? (r.weekdays || []).slice() : [new Date().getDay()];
   recSelCat = r ? r.category : '';
   recSubs   = r ? (r.subtasks || []).map(function(x){ return {text:x.text, done:false}; }) : [];
 
-  buildFreqGrid(); buildDayGrid(); buildRecCatGrid(); renderRecStList();
+  buildFreqGrid(); buildDayGrid(); buildRecCatGrid(); buildOwnerGrid('rec'); renderRecStList();
   document.getElementById('recM').classList.add('open');
   setTimeout(function(){ document.getElementById('rec-name').focus(); }, 260);
 }
@@ -3230,7 +3420,8 @@ async function saveRec() {
   var row = {
     name:name,
     descr:    document.getElementById('rec-desc').value.trim(),
-    owner:    document.getElementById('rec-owner').value || '',
+    owner:    recOwners[0] || '',
+    owners:   recOwners.slice(),
     category: recSelCat || '',
     link:     document.getElementById('rec-link').value.trim(),
     subtasks: recSubs.map(function(x){ return {text:x.text, done:false}; }),
@@ -3350,7 +3541,7 @@ function renderDashByOwner() {
   if (!users.length) { el.innerHTML = '<div class="dash-empty">No users.</div>'; return; }
   var now = new Date(); now.setHours(0,0,0,0);
   el.innerHTML = users.map(function(u) {
-    var mine   = tasks.filter(function(t){return t.owner===u;});
+    var mine   = tasks.filter(function(t){ return ownedBy(t, u); });
     var active = mine.filter(function(t){return !t.done;}).length;
     var done   = mine.filter(function(t){return  t.done;}).length;
     var over   = mine.filter(function(t){return !t.done&&t.dueDate&&new Date(t.dueDate+'T00:00:00')<now;}).length;
@@ -3402,11 +3593,14 @@ function renderDashTopActive() {
   if (!sorted.length) { el.innerHTML = '<div class="dash-empty">No active tasks.</div>'; return; }
   el.innerHTML = sorted.map(function(t) {
     var lc = (t.logs||[]).filter(function(l){return l.type!=='created';}).length;
-    var os = ownerStyle(t.owner||'');
+    var ownBadges = ownersOf(t).map(function(o){
+      var oS = ownerStyle(o);
+      return '<span class="dash-badge" style="background:'+oS.bg+';color:'+oS.c+'">' + esc(o) + '</span>';
+    }).join('');
     return '<div class="dash-task-item" onclick="gotoTask(\''+t.id+'\')">' +
       '<div class="dash-task-name">' + t.name + '</div>' +
       '<span class="dash-badge" style="background:rgba(68,138,255,.12);color:var(--bl)">' + lc + ' logs</span>' +
-      '<span class="dash-badge" style="background:'+os.bg+';color:'+os.c+'">' + (t.owner||'') + '</span>' +
+      ownBadges +
     '</div>';
   }).join('');
 }
@@ -3427,11 +3621,14 @@ function renderDashUpcoming() {
   el.innerHTML = soon.map(function(t) {
     var d = new Date(t.dueDate+'T00:00:00');
     var due = fmtDue(t.dueDate);
-    var os = ownerStyle(t.owner||'');
+    var ownBadges = ownersOf(t).map(function(o){
+      var oS = ownerStyle(o);
+      return '<span class="dash-badge" style="background:'+oS.bg+';color:'+oS.c+'">' + esc(o) + '</span>';
+    }).join('');
     return '<div class="dash-task-item" onclick="gotoTask(\''+t.id+'\')">' +
       '<div class="dash-task-name">' + t.name + '</div>' +
       '<span class="dash-badge due ' + (due?due.cls:'ok') + '" style="font-size:10px;background:none;padding:0;color:var(--sub);font-family:var(--font-mono,monospace)">' + (due?due.label:'') + '</span>' +
-      '<span class="dash-badge" style="background:'+os.bg+';color:'+os.c+'">' + (t.owner||'') + '</span>' +
+      ownBadges +
     '</div>';
   }).join('');
 }
@@ -3476,8 +3673,10 @@ function renderDashAvg() {
   done.forEach(function(t){
     var days = (getCompletedTs(t) - t.createdAt) / 86400000;
     if (days < 0) return;
-    if (!byOwner[t.owner]) byOwner[t.owner] = [];
-    byOwner[t.owner].push(days);
+    ownersOf(t).forEach(function(o){
+      if (!byOwner[o]) byOwner[o] = [];
+      byOwner[o].push(days);
+    });
   });
 
   var rows = Object.keys(byOwner).map(function(u){

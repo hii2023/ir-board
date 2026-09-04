@@ -210,3 +210,31 @@ That is why it uses CSS multi-column rather than a grid: a grid fills row-major,
 2 next to 1 instead of under it. Multi-column also balances the two column heights on its
 own. Full-width rows (the Done separator, the compliment, the empty state) use
 `column-span: all` to break out and start a fresh pair of columns below.
+
+## Assigning several people
+
+A task can be assigned to more than one person. In the New Task, Edit and Schedule forms,
+**Assign To** is a set of chips: tap to add someone, tap again to remove them.
+
+There is deliberately **no combined filter chip**. A task assigned to two people appears
+under each of their names separately, and counts once for each of them. The filter row
+only ever lists individual people.
+
+The first name selected is also written to the old single `owner` field, so nothing that
+still reads it breaks.
+
+## Phone numbers and sending a task
+
+Settings lists each person with a phone field next to their name. Numbers save when you
+leave the field or press Enter.
+
+Once someone has a number saved you can send them a task on WhatsApp:
+
+- tap their name pill on the card (a small arrow marks the ones that can be sent to), or
+- use **Send On WhatsApp** at the bottom of the Edit sheet
+
+Either opens WhatsApp with the task already written out — name, description, due date,
+category, subtasks and link. You still press send yourself; nothing is sent automatically.
+
+Numbers can be typed however you like. `98765 43210`, `098765 43210` and `+91 98765 43210`
+all resolve to the same number; a bare ten-digit number is assumed to be Indian.
