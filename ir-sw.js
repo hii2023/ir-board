@@ -3,7 +3,7 @@
    falls back to cache when offline. App refreshes every time it opens.
 */
 
-const CACHE = 'irboard-v2';
+const CACHE = 'irboard-v3';
 
 /* On install: activate immediately, no waiting */
 self.addEventListener('install', e => {

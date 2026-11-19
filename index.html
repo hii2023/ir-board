@@ -581,6 +581,10 @@ body.light .chip.ac { border-color:rgba(0,158,87,.4); }
 /* The schedule editor opens on top of the Recurring page (z-index 600),
    so it needs to sit above it rather than behind. */
 #recM { z-index:700; }
+.me-btn { max-width:110px; padding:0 12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+.me-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; }
+.me-list button { height:44px; border-radius:10px; border:1px solid var(--b2); background:var(--s1); color:var(--tx); font:inherit; font-size:14px; cursor:pointer; }
+.me-list button.on { border-color:var(--ac); color:var(--ac); background:var(--acbg); }
 .sheet {
   width:100%; background:var(--sheet);
   border:1px solid var(--b2); border-bottom:none;
@@ -1173,6 +1177,7 @@ html, body { max-width:100%; overflow-x:hidden; }
       <div class="stats" id="stats">-- tasks</div>
     </div>
     <div class="tbright">
+      <button class="ibt me-btn" onclick="openMe()" id="meBtn" title="Who is using this board" aria-label="Who is using this board">Me</button>
       <button class="ibt ibt-sq" onclick="openRecur()" id="recurBtn" title="Recurring tasks" aria-label="Recurring tasks">R</button>
       <button class="ibt ibt-sq" onclick="openDash()" id="dashBtn" title="Dashboard" aria-label="Dashboard">D</button>
       <button class="ibt ibt-sq on" id="viewBtn" onclick="toggleView()" title="Compact view" aria-label="Toggle compact view">C</button>
@@ -1515,6 +1520,19 @@ html, body { max-width:100%; overflow-x:hidden; }
   </div>
 </div>
 
+<div class="mov" id="meM">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="handle"></div>
+    <div class="si">
+      <div class="shd"><div><div class="sttl">Who are you?</div><div class="ssub">Pick your name once on this phone. The activity log then shows who did what.</div></div></div>
+      <div id="me-list" class="me-list"></div>
+      <div class="sbtns" style="margin-top:16px">
+        <button class="bs" onclick="closeMe()">Later</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
 <script>
 
@@ -1575,7 +1593,7 @@ async function reloadActivity() {
   var res = await sb.from('irb_activity').select('*').order('ts', {ascending:false}).limit(100);
   if (res.error) return;
   activityCache = (res.data || []).map(function(a){
-    return {id:a.id, type:a.type, taskId:a.task_id, taskName:a.task_name, detail:a.detail, ts:Number(a.ts)};
+    return {id:a.id, type:a.type, taskId:a.task_id, taskName:a.task_name, detail:a.detail, actor:a.actor || '', ts:Number(a.ts)};
   });
   if (dashOpen) renderDashActivity();
 }
@@ -1584,7 +1602,7 @@ async function reloadConfig() {
   if (res.error) return;
   (res.data || []).forEach(function(row) {
     var list = (row.data && row.data.list) || [];
-    if (row.key === 'users') { users = list; syncSelects(); }
+    if (row.key === 'users') { users = list; syncSelects(); checkMe(); }
     if (row.key === 'phones') { phones = (row.data && row.data.map) || {}; }
     if (row.key === 'categories') {
       categories = list;
@@ -1625,10 +1643,45 @@ async function saveConfig(key, list) {
   sbErr('Save settings')(res);
   await reloadConfig();
 }
+/* ── WHO IS USING THIS BOARD ──
+   No login, so each phone picks a name once (stored on the device). Every
+   activity row then records it in irb_activity.actor. */
+var me = '';
+try { me = localStorage.getItem('irb_me') || ''; } catch (e) {}
+var meAsked = false;
+function escMe(t) { return String(t).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function updateMeBtn() {
+  var b = document.getElementById('meBtn');
+  if (b) { b.textContent = me || 'Me'; b.classList.toggle('on', !!me); }
+}
+function checkMe() {
+  updateMeBtn();
+  if (meAsked || !users.length) return;
+  if (!me || users.indexOf(me) < 0) { meAsked = true; openMe(); }
+}
+function openMe() {
+  var el = document.getElementById('me-list');
+  el.innerHTML = users.map(function(u, i) {
+    return '<button type="button" class="' + (u === me ? 'on' : '') + '" data-i="' + i + '">' + escMe(u) + '</button>';
+  }).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('button'), function(b) {
+    b.onclick = function() { pickMe(users[+b.getAttribute('data-i')]); };
+  });
+  document.getElementById('meM').classList.add('open');
+}
+function closeMe() { document.getElementById('meM').classList.remove('open'); }
+function pickMe(name) {
+  me = name;
+  try { localStorage.setItem('irb_me', name); } catch (e) {}
+  updateMeBtn(); closeMe();
+  toast('Hi ' + name);
+}
+
 async function logActivity(a) {
   await sb.from('irb_activity').insert({
     type: a.type, task_id: a.taskId || null, task_name: a.taskName || '',
-    detail: a.detail || '', ts: a.ts || Date.now()
+    detail: a.detail || '', ts: a.ts || Date.now(),
+    actor: me || null
   });
   reloadActivity();
 }
@@ -3792,7 +3845,7 @@ function renderDashActivity() {
       '<div class="dash-act-icon" style="background:' + ic.bg + ';color:' + ic.c + '">' + ic.icon + '</div>' +
       '<div class="dash-act-body">' +
         '<div class="dash-act-text"><b>' + (a.taskName||'') + '</b> ' + a.type + detail + '</div>' +
-        '<div class="dash-act-time">' + timeStr + '</div>' +
+        '<div class="dash-act-time">' + timeStr + (a.actor ? ' &middot; by ' + escMe(a.actor) : '') + '</div>' +
       '</div>' +
     '</div>';
   }).join('');
